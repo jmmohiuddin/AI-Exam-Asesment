@@ -1,0 +1,53 @@
+{
+  "appName": "খাতা",
+  "tagline": "শিক্ষকদের জন্য খাতা মূল্যায়ন",
+  "language": {
+    "label": "ভাষা",
+    "bnShort": "বাংলা",
+    "enShort": "EN",
+    "bnName": "বাংলা",
+    "enName": "ইংরেজি"
+  },
+  "actions": {
+    "save": "সংরক্ষণ করুন",
+    "cancel": "বাতিল",
+    "close": "বন্ধ করুন",
+    "back": "পেছনে",
+    "next": "পরবর্তী",
+    "retry": "আবার চেষ্টা করুন",
+    "more": "আরও",
+    "confirm": "নিশ্চিত করুন",
+    "continue": "চালিয়ে যান",
+    "dismiss": "সরিয়ে দিন",
+    "reload": "আবার লোড করুন"
+  },
+  "states": {
+    "loading": "লোড হচ্ছে…",
+    "saved": "সংরক্ষিত",
+    "queuedOffline": "অফলাইনে সারিতে রাখা হয়েছে। ইন্টারনেট ফিরলে সিঙ্ক হবে।",
+    "offline": "আপনি অফলাইনে আছেন। মূল্যায়নের সিদ্ধান্তগুলো পরে সিঙ্ক হবে।"
+  },
+  "required": "(আবশ্যক)",
+  "absent": "ABS",
+  "noValue": "—",
+  "skipLink": "মূল অংশে যান",
+  "supportCode": "সহায়তা কোড: {{code}}",
+  "comingSoon": "এই অংশটি তৈরি হচ্ছে।",
+  "glossary": {
+    "question": "প্রশ্ন",
+    "stimulus": "উদ্দীপক",
+    "knowledge": "জ্ঞানমূলক",
+    "comprehension": "অনুধাবনমূলক",
+    "application": "প্রয়োগমূলক",
+    "higherOrder": "উচ্চতর দক্ষতা",
+    "marks": "নম্বর",
+    "script": "খাতা",
+    "recheck": "পুনর্নিরীক্ষণ",
+    "moderation": "মডারেশন"
+  },
+  "marks": {
+    "outOf": "{{mark}}/{{max}}",
+    "aiSuggests": "এআই প্রস্তাব: {{mark}}",
+    "yourMark": "আপনার নম্বর"
+  }
+}

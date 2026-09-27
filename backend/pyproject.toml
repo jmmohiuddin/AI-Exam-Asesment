@@ -1,0 +1,38 @@
+[project]
+name = "khata"
+version = "0.1.0"
+description = "Khata — AI-assisted exam-script marking platform (backend)"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "sqlalchemy>=2.0,<2.2",
+    "psycopg[binary]>=3.2",
+    "alembic",
+    "pydantic>=2",
+    "pydantic-settings",
+    "pwdlib[argon2]",
+    "pyjwt",
+    "procrastinate>=3.10,<4",
+    "cryptography",
+    "python-multipart",
+]
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "hypothesis",
+    "httpx",
+    "ruff",
+    "mypy",
+    "import-linter",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/khata"]

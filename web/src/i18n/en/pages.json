@@ -1,0 +1,30 @@
+{
+  "exams": {
+    "title": "Exams",
+    "emptyTitle": "No exams yet",
+    "emptyBody": "Exams you create or are assigned to will be listed here."
+  },
+  "results": {
+    "title": "Results",
+    "emptyTitle": "No results yet",
+    "emptyBody": "Results appear here after an exam is locked."
+  },
+  "insights": {
+    "title": "Insights",
+    "emptyTitle": "No insights yet",
+    "emptyBody": "Student and question analysis appears after the first published exam."
+  },
+  "school": {
+    "title": "School",
+    "emptyTitle": "School settings are coming",
+    "emptyBody": "Setup, staff, roster and consent will be managed here."
+  },
+  "review": {
+    "title": "Review",
+    "emptyTitle": "Nothing to review",
+    "emptyBody": "Your question queues will appear here when scripts are processed."
+  },
+  "more": {
+    "title": "More"
+  }
+}

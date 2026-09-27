@@ -1,0 +1,77 @@
+{
+  "level": {
+    "label": "AI support level",
+    "L0": "Manual",
+    "L1": "Evidence only",
+    "L2": "AI suggests",
+    "L3": "Batch eligible",
+    "L0Tip": "The AI suggests no marks here; you mark this yourself.",
+    "L1Tip": "The AI points out evidence in the answer but suggests no marks.",
+    "L2Tip": "The AI suggests a mark for each criterion; the final mark is yours.",
+    "L3Tip": "Routine answers can be checked and confirmed together; some are opened one by one."
+  },
+  "risk": {
+    "high": "Check carefully",
+    "medium": "Worth a look",
+    "low": "Looks routine",
+    "reasonsTitle": "Why this needs attention",
+    "showReasons": "{{level}}: show reasons",
+    "lowTip": "No warning signs found. You are still the marker.",
+    "more": "More ({{count}})",
+    "fewer": "Show fewer",
+    "reasons": {
+      "legibility_low": "Handwriting unclear in part of the answer",
+      "readers_disagree": "Two AI readers disagreed",
+      "sample_inconsistent": "AI was inconsistent on this answer",
+      "math_different": "Maths check found a difference",
+      "math_unverified": "Maths couldn't be checked automatically",
+      "boundary": "Student is near the pass mark or a grade boundary",
+      "high_value": "High-mark question",
+      "mapping_uncertain": "Not sure this answer belongs to this question",
+      "crossed_out": "Crossed-out work nearby",
+      "multiple_attempts": "More than one attempt",
+      "instruction_text": "Contains text addressed to the examiner",
+      "unusual_method": "Unusual method, not in the rubric's alternatives"
+    }
+  },
+  "verify": {
+    "label": "Automatic check",
+    "matches": "Value matches key",
+    "unit_missing": "Unit missing",
+    "cas_equivalent": "Equivalent (CAS)",
+    "cannot_verify": "Can't verify"
+  },
+  "criterion": {
+    "met": "met",
+    "partly": "partly",
+    "not": "not met",
+    "unknown": "can't tell"
+  },
+  "banner": {
+    "info": "Information",
+    "warning": "Warning",
+    "danger": "Problem",
+    "masked": "Quality check",
+    "instruction": "Text addressed to the examiner"
+  },
+  "stepper": {
+    "progress": "Step {{current}} of {{total}}",
+    "stepsLabel": "Steps",
+    "saveDraft": "Save draft",
+    "draftSaved": "Draft saved",
+    "finish": "Finish",
+    "completed": "completed"
+  },
+  "table": {
+    "empty": "Nothing to show yet.",
+    "loading": "Loading the list…",
+    "error": "The list couldn't load. Check your connection and try again.",
+    "sortBy": "Sort by {{column}}"
+  },
+  "math": {
+    "error": "This formula couldn't be displayed. The original text is shown."
+  },
+  "breadcrumb": "You are here",
+  "toastRegion": "Notifications",
+  "otpGroup": "Verification code, 6 digits"
+}

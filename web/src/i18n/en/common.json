@@ -1,0 +1,53 @@
+{
+  "appName": "Khata",
+  "tagline": "Exam-script marking for teachers",
+  "language": {
+    "label": "Language",
+    "bnShort": "বাংলা",
+    "enShort": "EN",
+    "bnName": "Bangla",
+    "enName": "English"
+  },
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "retry": "Try again",
+    "more": "More",
+    "confirm": "Confirm",
+    "continue": "Continue",
+    "dismiss": "Dismiss",
+    "reload": "Reload"
+  },
+  "states": {
+    "loading": "Loading…",
+    "saved": "Saved",
+    "queuedOffline": "Queued offline. It will sync when you're back online.",
+    "offline": "You're offline. Marking decisions will sync."
+  },
+  "required": "(required)",
+  "absent": "ABS",
+  "noValue": "—",
+  "skipLink": "Skip to main content",
+  "supportCode": "Support code: {{code}}",
+  "comingSoon": "This section is being built.",
+  "glossary": {
+    "question": "Question",
+    "stimulus": "Stimulus",
+    "knowledge": "Knowledge",
+    "comprehension": "Comprehension",
+    "application": "Application",
+    "higherOrder": "Higher-order skills",
+    "marks": "Marks",
+    "script": "Script",
+    "recheck": "Re-check",
+    "moderation": "Moderation"
+  },
+  "marks": {
+    "outOf": "{{mark}}/{{max}}",
+    "aiSuggests": "AI suggests {{mark}}",
+    "yourMark": "Your mark"
+  }
+}

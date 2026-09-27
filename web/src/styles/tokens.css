@@ -1,0 +1,233 @@
+/*
+ * Khata design tokens — source: docs/05-ui-ux-design.md §3, §4.
+ * Hex values that 05 does not fix (risk, ai-level, banners, dim mode) were
+ * chosen here and are contrast-checked by src/styles/tokens.test.ts.
+ * Colour is never the only carrier of meaning: every state also has an icon
+ * and a text label (05 §4.3).
+ */
+:root {
+  /* ---- Spacing (4-pt scale) ---- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  /* ---- Radius ---- */
+  --radius-control: 6px;
+  --radius-card: 10px;
+  --radius-sheet: 16px;
+  --radius-pill: 999px;
+
+  /* ---- Elevation (minimal) ---- */
+  --elevation-0: none;
+  --elevation-1: 0 1px 2px rgb(31 35 40 / 0.08);
+  --elevation-2: 0 4px 12px rgb(31 35 40 / 0.12);
+  --elevation-3: 0 12px 32px rgb(31 35 40 / 0.18);
+
+  /* ---- Motion ---- */
+  --motion-micro: 120ms;
+  --motion-panel: 200ms;
+  --motion-advance: 150ms;
+  --easing-standard: cubic-bezier(0.2, 0, 0, 1);
+
+  /* ---- Focus (2 px, offset 2 px, never removed) ---- */
+  --focus-width: 2px;
+  --focus-offset: 2px;
+
+  /* ---- Touch targets ---- */
+  --target-min: 44px;
+  --row-comfortable: 44px;
+  --row-compact: 36px;
+
+  /* ---- Layout ---- */
+  --rail-width: 232px;
+  --rail-width-collapsed: 64px;
+  --topbar-height: 56px;
+  --bottom-tabs-height: 64px;
+  --content-max: 1600px;
+  --gutter-phone: 16px;
+  --gutter-tablet: 20px;
+  --gutter-desktop: 24px;
+
+  /* ---- Typography ---- */
+  --font-sans: 'Noto Sans', 'Noto Sans Bengali', 'Hind Siliguri', system-ui, sans-serif;
+  --font-bn: 'Noto Sans Bengali', 'Hind Siliguri', 'Noto Sans', system-ui, sans-serif;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+
+  /* size / line-height, desktop (Latin; Bangla overrides below) */
+  --text-display: 24px;
+  --lh-display: 32px;
+  --text-heading: 18px;
+  --lh-heading: 28px;
+  --text-body: 15px;
+  --lh-body: 24px;
+  --text-dense: 14px;
+  --lh-dense: 22px;
+  --text-caption: 13px;
+  --lh-caption: 20px;
+  --text-math-scale: 1.05;
+
+  /* ---- Colour: neutral (warm, paper-like) ---- */
+  --color-bg: #fafaf7;
+  --color-surface: #ffffff;
+  --color-surface-sunken: #f1f0eb;
+  --color-text: #1f2328;
+  --color-text-muted: #585f66;
+  --color-border: #deddd6;
+  --color-border-strong: #7a7f85;
+  --color-overlay: rgb(31 35 40 / 0.45);
+
+  /* ---- Colour: primary (deep teal) ---- */
+  --color-primary: #0f6e6e;
+  --color-primary-hover: #0b5a5a;
+  --color-primary-active: #084848;
+  --color-on-primary: #ffffff;
+  --color-primary-subtle: #e3f0ef;
+  --color-primary-text: #0b5a5a;
+
+  --color-focus: #0b57d0;
+
+  /* ---- Colour: criterion states (05 §4.3, fixed hex) ---- */
+  --color-criterion-met: #2e7d32;
+  --color-criterion-partly: #b26a00;
+  --color-criterion-partly-text: #8a5200;
+  --color-criterion-not: #b3261e;
+  --color-criterion-unknown: #5f6b7a;
+
+  /* ---- Colour: risk (brick / amber / slate-green) ---- */
+  --color-risk-high: #b3261e;
+  --color-risk-high-bg: #fbeae8;
+  --color-risk-high-text: #8c1d17;
+  --color-risk-medium: #b26a00;
+  --color-risk-medium-bg: #fff3df;
+  --color-risk-medium-text: #7a4900;
+  --color-risk-low: #3e7061;
+  --color-risk-low-bg: #e8f1ee;
+  --color-risk-low-text: #2f5a4d;
+
+  /* ---- Colour: AI level (blue-grey, never green) ---- */
+  --color-ai-level: #4b5b6e;
+  --color-ai-level-bg: #e9eef3;
+  --color-ai-level-text: #3a4858;
+
+  /* ---- Colour: verification (neutral, never red) ---- */
+  --color-verify: #4a5563;
+  --color-verify-bg: #eef0f2;
+  --color-verify-text: #3a434e;
+
+  /* ---- Colour: banners ---- */
+  --color-info: #1d5fa8;
+  --color-info-bg: #e8f1fb;
+  --color-warning: #b26a00;
+  --color-warning-bg: #fff4e0;
+  --color-danger: #b3261e;
+  --color-danger-bg: #fdecea;
+  --color-danger-hover: #951f18;
+  --color-on-danger: #ffffff;
+  --color-masked: #3d5f86;
+  --color-masked-bg: #eaf0f7;
+  --color-instruction: #6a4c93;
+  --color-instruction-bg: #f1ecf8;
+
+  --color-chip-bg: #efeee8;
+}
+
+/* Bangla line-height ≥1.6× (05 §4.2); no letter-spacing or caps on Bangla. */
+:root:lang(bn),
+[lang='bn'] {
+  --lh-display: 40px;
+  --lh-heading: 30px;
+  --lh-body: 24px;
+  --lh-dense: 24px;
+  --lh-caption: 21px;
+}
+
+/* Phone: body 16/26, display 22/30 (Bangla 22/36). */
+@media (max-width: 767px) {
+  :root {
+    --text-display: 22px;
+    --lh-display: 30px;
+    --text-body: 16px;
+    --lh-body: 26px;
+  }
+  :root:lang(bn),
+  [lang='bn'] {
+    --lh-display: 36px;
+    --lh-body: 26px;
+  }
+}
+
+/* Compact density (desktop tables/ledgers). */
+[data-density='compact'] {
+  --row-comfortable: 36px;
+}
+
+/*
+ * Dim mode: dark chrome for evening marking. Student images keep natural
+ * paper brightness (see .paper-image in global.css). Not a full dark theme.
+ */
+[data-dim='true'] {
+  --color-bg: #15181c;
+  --color-surface: #1e2228;
+  --color-surface-sunken: #262b32;
+  --color-text: #e7e9ec;
+  --color-text-muted: #a7afb8;
+  --color-border: #3a4048;
+  --color-border-strong: #7d8691;
+  --color-overlay: rgb(0 0 0 / 0.6);
+
+  --color-primary: #5cc2bf;
+  --color-primary-hover: #7dd3d0;
+  --color-primary-active: #9fe0dd;
+  --color-on-primary: #0a1f1f;
+  --color-primary-subtle: #1c3534;
+  --color-primary-text: #7dd3d0;
+
+  --color-focus: #8ab4f8;
+
+  --color-criterion-met: #6cc070;
+  --color-criterion-partly: #e0a140;
+  --color-criterion-partly-text: #e0a140;
+  --color-criterion-not: #f2857b;
+  --color-criterion-unknown: #a4aebb;
+
+  --color-risk-high: #f2857b;
+  --color-risk-high-bg: #3a1f1d;
+  --color-risk-high-text: #f6b1aa;
+  --color-risk-medium: #e0a140;
+  --color-risk-medium-bg: #3a2c14;
+  --color-risk-medium-text: #f0c47e;
+  --color-risk-low: #7fb8a6;
+  --color-risk-low-bg: #1d302a;
+  --color-risk-low-text: #a8d4c6;
+
+  --color-ai-level: #9fb0c4;
+  --color-ai-level-bg: #26303b;
+  --color-ai-level-text: #c3d0de;
+
+  --color-verify: #aab3bf;
+  --color-verify-bg: #2a3038;
+  --color-verify-text: #cfd6de;
+
+  --color-info: #7fb0ea;
+  --color-info-bg: #1b2a3c;
+  --color-warning: #e0a140;
+  --color-warning-bg: #33280f;
+  --color-danger: #f2857b;
+  --color-danger-bg: #3a1f1d;
+  --color-danger-hover: #f6a79f;
+  --color-on-danger: #2a0e0b;
+  --color-masked: #9db6d4;
+  --color-masked-bg: #212c3a;
+  --color-instruction: #c3a9e6;
+  --color-instruction-bg: #2c2438;
+
+  --color-chip-bg: #2a2f36;
+
+  color-scheme: dark;
+}

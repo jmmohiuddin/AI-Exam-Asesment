@@ -1,0 +1,56 @@
+{
+  "title": "Home",
+  "greeting": "Welcome, {{name}}",
+  "noSchool": {
+    "title": "You're not linked to a school yet",
+    "body": "Ask your school admin to add you as staff. You'll see your work here once they do."
+  },
+  "teacher": {
+    "title": "Continue marking",
+    "emptyTitle": "No scripts to mark right now",
+    "emptyBody": "When scripts are scanned and processed, your question queues will appear here with how many are left.",
+    "rubricsTitle": "Rubric tasks",
+    "rubricsEmpty": "No rubrics are waiting to be finished or locked.",
+    "returnedTitle": "Returned to you",
+    "returnedEmpty": "Nothing has been returned by your HoD."
+  },
+  "coordinator": {
+    "title": "Exam pipeline",
+    "emptyTitle": "No exams yet",
+    "emptyBody": "Create an exam to see it move from draft to published here.",
+    "action": "Go to Exams",
+    "stages": {
+      "draft": "Draft",
+      "capturing": "Capturing",
+      "reviewing": "Reviewing",
+      "moderation": "Moderation",
+      "locked": "Locked",
+      "published": "Published"
+    },
+    "stagesLabel": "Exam stages"
+  },
+  "hod": {
+    "title": "Moderation queue",
+    "emptyTitle": "No samples waiting",
+    "emptyBody": "When teachers finish marking, moderation samples will appear here."
+  },
+  "principal": {
+    "title": "Exam summary",
+    "emptyTitle": "Nothing to summarise yet",
+    "emptyBody": "Once the first exam is published, its status and results will appear here."
+  },
+  "admin": {
+    "title": "School setup",
+    "intro": "Finish these steps so teachers can start their first exam.",
+    "todo": "To do",
+    "roster": "Add the student roster",
+    "consent": "Collect guardian consent",
+    "staff": "Add staff and teaching assignments",
+    "action": "Open School"
+  },
+  "capture": {
+    "title": "Script capture",
+    "emptyTitle": "Scanning happens in the capture app",
+    "emptyBody": "Use the Khata Android app to scan scripts. Upload progress will show here."
+  }
+}
