@@ -40,23 +40,19 @@
    | Human evaluation layer | Teacher marks, overrides, reasons | Confidential | Institution | **Contract + 1 year** | Fine-tuning & alignment (**opt-in**) |
    | Platform telemetry | Timestamps, latency, clickstreams | Internal | Platform | **365 days** | Operational only |
 
-4. **Sixteen-stage lifecycle with controls:**
-   1. Generation: exam cover sheets with an isolated PII header zone.
-   2. Collection: **TLS 1.3 + mTLS**; MD5 checksum.
-   3. Ingestion: WAF, sandboxing, rate limits, MIME sandboxing.
-   4. Validation: DPI, lighting, blur, page count; failures go to re-scan.
-   5. Identification/redaction: DL header detection, crop or mask, replace with `student_hash`.
-   6. OCR/extraction: multilingual OCR plus VLM into JSON.
-   7. Normalization: Unicode for Bengali graphemes, LaTeX.
-   8. Storage: object, SQL and vector stores.
-   9. Annotation: de-identified segments, expert labels.
-   10. Human verification: teacher accept or override, with required rationale tags.
-   11. AI evaluation: LLM scoring with token-level confidence.
-   12. Model evaluation: QWK and MAE on benchmarks.
-   13. Analytics: anonymized; **DP noise plus cohort threshold N ≥ 10**.
-   14. Model improvement: validated triplets into SFT/DPO.
-   15. Archiving: at term end, WORM cold storage with customer-managed keys.
-   16. Retention/deletion: crypto key shredding plus overwrite on contract expiry or data subject request.
+4. **Sixteen-stage lifecycle with controls** (Table 2):
+   - Generation: cover sheets with an isolated PII header zone.
+   - Collection: **TLS 1.3 + mTLS**; MD5 checksum.
+   - Ingestion: WAF, rate limits, MIME sandboxing.
+   - Validation: DPI, blur, page count; failures go to re-scan.
+   - Redaction: DL header detection, crop or mask, `student_hash`.
+   - OCR/VLM into JSON, then normalization (Bengali Unicode, LaTeX), then object, SQL and vector storage.
+   - Annotation on de-identified segments; teacher verification with required rationale tags.
+   - AI evaluation with token-level confidence; model evaluation (QWK, MAE).
+   - Analytics with **DP noise plus cohort threshold N ≥ 10**.
+   - Model improvement: validated triplets into SFT/DPO.
+   - Archive at term end to WORM cold storage with customer-managed keys.
+   - Deletion by key shredding on contract expiry or data subject request.
 
 5. **Five classification tiers (Table 5):**
 
@@ -200,9 +196,9 @@
     - Qdrant/Milvus vectors, **built only from de-identified text**.
     - Snowflake/BigQuery for anonymized analytics and audit logs.
 
-    Schema: `student_identity_vault` (encrypted national ID, encrypted name, roll), `answer_scripts` (student_hash, raw and redacted URIs, `is_opted_in_for_training` default FALSE), `extracted_answers` (`cq_sub_part` in A/B/C/D/MCQ, OCR confidence), `assessment_records` (AI score, confidence, rationale, model version, teacher final score, override flag, reason code, teacher_id).
+    Schema: identity vault (encrypted NID and name, roll); scripts (`student_hash`, raw and redacted URIs, `is_opted_in_for_training` default FALSE); answers (`cq_sub_part` A/B/C/D/MCQ, OCR confidence); assessment records (AI score, confidence, rationale, model version, teacher score, override flag, reason code, teacher_id).
 
-    Lineage chain: final score → teacher review event → AI inference payload → prompt version, config and model weights ID → extracted text and bbox → redacted image → raw upload plus scanner metadata.
+    Lineage: score → review event → inference payload → prompt/model version → text and bbox → redacted image → raw upload.
 
 24. **Security and deletion:** header cropping plus **HMAC-SHA-256** tokenization; synthetic sandbox; **ZDR contracts** with third-party providers; in-country mirroring. Deletion runs: request → controller verification → identity token revocation → primary DB delete → object key shredding in the HSM → vector and index flush → **deletion certificate** to the controller.
 
@@ -218,14 +214,7 @@
     - Handwriting penalty: balanced training plus normalization layers.
     - Surveillance: no non-educational third-party access to analytics.
 
-27. **Roadmap:**
-    - Phase 0 (months 1–3): DPAs, threat model, synthetic seed.
-    - Phase 1 (months 4–6): PII redaction, layout parser, review UI.
-    - Phase 2 (months 7–9): 10-school pilot, 10k scripts.
-    - **Phase 3 (months 10–12): deploy in-country database replication in Bangladesh**, vector DB, active learning.
-    - Phase 4 (months 13–18): fine-tune open-weight VLMs.
-    - Phase 5 (months 19–24): 500 institutions, SOC 2 Type II.
-    - Phase 6 (month 25+): international (GDPR/FERPA/COPPA).
+27. **Roadmap:** P0 (months 1–3) DPAs, threat model, synthetic seed; P1 (4–6) redaction, layout parser, review UI; P2 (7–9) 10-school pilot; **P3 (10–12) in-country DB replication**, vector DB, active learning; P4 (13–18) fine-tune open-weight VLMs; P5 (19–24) 500 institutions, SOC 2 Type II; P6 (25+) international.
 
 28. **Q&A answers (key):**
     - Minimum data: scans, question papers and rubrics, `student_hash`, teacher scores.
@@ -237,7 +226,6 @@
     - **Never send to external AI:** raw unredacted images, identity records, teacher contact info, credentials.
     - Train on customer data only if all hold: (a) opt-in addendum, (b) PII redaction passed, (c) hygiene filters against single-teacher bias, (d) residency compliance.
     - Leakage: **group split by student, school and exam paper**.
-    - First 10 schools give 10k seed scripts; first 100 give 200k.
 
 ---
 
@@ -307,9 +295,7 @@
 
 **H. Drift:** curriculum version change → benchmark → score delta → prompt/rubric update → corpus refresh. Every score is version-tagged.
 
-**I. Deletion:** request → controller verify → token revocation → DB delete → key shred → index flush → certificate.
-
-**J. Pilot and roadmap:** four school phases; seven time phases (months 0–25+).
+**I. Deletion:** see finding 24. **J. Pilot and roadmap:** see findings 14 and 27.
 
 ---
 
