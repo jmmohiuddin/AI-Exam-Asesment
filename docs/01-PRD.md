@@ -309,7 +309,7 @@ Format: **ID | Requirement | Priority (M/S/C/W) | Rationale / trace | User | Acc
 | FR-ORG-03 | Import roster from Excel/CSV: roll, name (BN/EN), class, group, version, section, optional subject choices (4th subject). Auto-detect and convert Bijoy/ANSI to Unicode. Show a validation report before commit. | M | S02, S04 (Bijoy) | Admin | A 500-row file with 20 Bijoy-encoded names imports with correct Unicode. Duplicates and missing rolls are reported. Nothing is committed until confirmed. | TR-BN-01 |
 | FR-ORG-04 | Staff accounts (mobile number) and role assignments: Org Owner, School Admin, Exam Coordinator, HoD/Moderator, Teacher, Capture Operator. Permissions are scoped per school and, for teachers, per subject-section. | M | S09 roles, DEC-39 | Admin | Role matrix (`08` §5) enforced by API tests. A teacher cannot open scripts of unassigned sections. | SEC-01 |
 | FR-ORG-05 | Assign teachers to subject × section(s) per academic year; allow multiple markers per exam question. | M | S02 | Admin, Coordinator | Assignments drive the review queues. Reassignment mid-exam moves unreviewed items only. | FR-ORG-04 |
-| FR-ORG-06 | Record consent per student: (a) processing for marking (required for AI use); (b) data contribution for evaluation/improvement (separate, optional). Evidence of consent: uploaded form or recorded method. Students without consent (a) are marked at L0 (AI off) automatically. | M | VF-12, EV-30, DEC-13 | Admin | Toggling consent off stops AI processing for that student's future scripts. Existing AI outputs are deleted within 24 h. The export lists consent status. | PRV-02 |
+| FR-ORG-06 | Record guardian consent per student, per type (08 §6.1): **CT-1** digital marking (required for capture); **CT-2** AI assistance incl. named AI providers (required for L1+); **CT-3** de-identified contribution to evaluation (optional). Evidence: uploaded form or recorded method. Without CT-1, the script is marked on paper and marks are entered in the results module. Without CT-2, items are processed at L0 automatically. | M | VF-12, EV-30, DEC-13 | Admin | The capture app refuses to link a cover to a student without CT-1 (shows "mark on paper"). Withdrawing CT-2 stops AI for future scripts and deletes pending AI outputs within 24 h. The export lists consent status per type. | PRV-02 |
 | FR-ORG-07 | Organisation-level view across schools for owners (results summaries, usage). | S | S03 persona | Owner | An owner of 3 schools sees aggregated summaries without per-student data from schools where the owner has no school role. | FR-ANL-04 |
 
 ### 15.2 Curriculum and paper templates (FR-CUR)
@@ -581,6 +581,7 @@ FR-ANL-01..04, FR-AIQ-01..02. Product analytics (internal): funnel per exam (set
 | SEC-08 | Rate limiting, file-type validation, malware scanning on uploads | M |
 | SEC-09 | Prompt-injection defences (AI-REQ-08) | M |
 | SEC-10 | Append-only, hash-chained audit log | M |
+| SEC-11 | Pre-exam confidentiality: question papers and rubrics are visible before the exam date only to the creator, the subject HoD and the coordinator. Exports are watermarked with the user ID. All views are logged. Cover sheets carry no question content. | M |
 
 ## 24. Privacy Requirements
 
