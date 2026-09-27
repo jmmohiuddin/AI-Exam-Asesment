@@ -192,6 +192,12 @@ Requirement format: **ID | Requirement | Reason (trace) | Priority (M/S/C) | Acc
 | TR-RUB-03 | Versioning and lock; post-lock diff and impact analysis (items whose suggestions/marks may change) | FR-RUB-08 | M | Impact list matches affected items |
 | TR-RUB-04 | Template library (platform + school) and instantiation into rubrics | FR-RUB-02 | M | — |
 
+### 12.1 Curriculum packs (TR-CUR)
+| ID | Requirement | Reason | Pri | Acceptance criteria |
+|---|---|---|---|---|
+| TR-CUR-01 | Curriculum packs and paper templates are versioned JSON artefacts loaded through an admin import with schema validation; exams pin `curriculum_version_id` and `template_id`; a pack update never mutates pinned exams | DEC-16, FR-CUR-01 | M | Import of a new pack version leaves existing exams' structures and results unchanged (regression test) |
+| TR-CUR-02 | Template rules derive item types for capability cells (e.g., CQ4PART → ka/kha/ga/gha) | 06 §4.3 | M | Cell codes resolve for every item of a template-based exam |
+
 ## 13. Human Review System Requirements (TR-REV)
 | ID | Requirement | Reason | Pri | Acceptance criteria |
 |---|---|---|---|---|

@@ -299,10 +299,10 @@ The documents follow `Research → Evidence → Insight → Problem → Requirem
 
 | Research | Evidence | Insight | Problem | Requirement | Product decision | Technical decision | UX decision | Implementation |
 |---|---|---|---|---|---|---|---|---|
-| S02, S03 | Qualitative transcription chain | EV-03 | Marks copied 4–5×; errors | FR-MRK-03, FR-RES-01..06 | DEC-01 deterministic core | TR-RES-01 result engine in pure code with unit tests | Totals computed live; no manual sum field | `results` module, 100% rule test coverage |
+| S02, S03 | Qualitative transcription chain | EV-03 | Marks copied 4–5×; errors | FR-REV-07, FR-RES-01..06 | DEC-01 deterministic core | TR-RES-01 result engine in pure code with unit tests | Totals computed live; no manual sum field | `results` module, 100% rule test coverage |
 | S05, S07, V2 | VF-15 | EV-14 | Bangla prose OCR unreliable | FR-AI-04, AI-REQ-03 | DEC-21 Bangla prose L1 | Support-level registry per cell | "Evidence only" badge; no suggested score | `capability_levels` table; gate job |
 | S08, V2 | VF-18, VF-19 | EV-17 | AI good only on a subset | FR-AI-06, AI-REQ-07 | DEC-04, DEC-29 | Risk–coverage calibrated thresholds | Queue sorted by risk; "Why flagged" chips | `confidence` service; calibration job |
-| V1 | VF-08, VF-12, VF-13 | EV-32 | Legal and social need for human authority and evidence | FR-HITL-01, FR-AUD-01 | DEC-05 | Append-only audit log; per-mark evidence record | Teacher identity on every confirmed mark | `audit_events` hash chain |
+| V1 | VF-08, VF-12, VF-13 | EV-32 | Legal and social need for human authority and evidence | HITL-01, FR-ADM-03, SEC-10 | DEC-05 | Append-only audit log; per-mark evidence record | Teacher identity on every confirmed mark | `audit_events` hash chain |
 | S15, S13, V2 | VF-21 | EV-24, EV-25 | Price ceiling vs AI cost | NFR-COST-01 | DEC-18, DEC-34 | Batch/overnight mode; Flash-tier default; escalation only on risk | "Results ready by 7 am" expectation | Cost meter per page |
 
 Full traceability matrix: `11-traceability-and-final-review.md`.
