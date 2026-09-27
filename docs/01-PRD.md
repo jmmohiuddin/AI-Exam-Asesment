@@ -670,7 +670,7 @@ See `10-registers.md` §6. PRD-owned: OQ-18 (teacher analytics policy), OQ-19 (A
 - **Unit:** AI-assisted script (any script with ≥1 item at L1+ processed by AI). Manual-only (L0) scripts and results processing are included in the platform fee, so the non-AI core is never penalised.
 - **Plan shape:** annual platform fee including an allowance of AI-assisted scripts, plus overage per script, plus a priority-mode surcharge. Allowances never "unlimited" (EV-26).
 - **Price points to test:** BDT 6 / 8 / 10 / 12 per AI-assisted script; per-student alternative BDT 200 / 300 / 400 per year (Grades 9–10). Pilot fee BDT 5,000–10,000, credited (DEC-19).
-- **Floor constraints:** AI cost ≤ BDT 3 per script (DEC-18) → ≥65% gross margin at BDT 8+. Teachers review (DEC-26), so there is no vendor labour cost.
+- **Floor constraints:** AI variable cost ≈ BDT 3 per script (DEC-18; TRD §38) gives ~62% contribution margin at BDT 8 and ~70% at BDT 10, before fixed platform costs. At pilot volumes, fixed costs exceed revenue (TRD §38.3); unit economics are evaluated at G2 with production volumes. Teachers review (DEC-26), so there is no vendor labour cost.
 - **Anchors to use in sales:** time saved, results turnaround, dispute reduction. Board examiners are paid Tk 35–40 per script (VF-09) as a reference for the market value of marking; no staff-cut pitch.
 
 ### 35.3 Beachhead and sales process
