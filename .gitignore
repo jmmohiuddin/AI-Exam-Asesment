@@ -11,6 +11,8 @@
 .swarm/
 ruvector.db
 graphify-out/
+agentdb.rvf
+agentdb.rvf.lock
 
 # Python
 __pycache__/

@@ -12,8 +12,17 @@ APP_ROLE = "khata_app"
 
 
 def run_sql(sql: str) -> None:
-    """Execute raw SQL on the driver (no bind-parameter parsing; multi-statement OK)."""
-    op.get_bind().exec_driver_sql(sql)
+    """Execute raw SQL on the driver (no bind-parameter parsing; multi-statement OK).
+
+    Goes straight to the psycopg cursor with no parameter sequence. ``exec_driver_sql``
+    would hand psycopg an empty parameter tuple, which turns on placeholder parsing and
+    rejects a bare ``%`` — and the vendored procrastinate schema legitimately contains
+    ``%`` in PL/pgSQL ``RAISE`` format strings. That file is upstream's, so it is kept
+    byte-for-byte and the escaping problem is solved here instead.
+    """
+    driver_connection = op.get_bind().connection.driver_connection
+    with driver_connection.cursor() as cursor:
+        cursor.execute(sql)
 
 
 def enable_tenant_rls(table: str, column: str = "tenant_id", *, nullable: bool = False) -> None:

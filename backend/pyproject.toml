@@ -36,3 +36,51 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/khata"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers --strict-config"
+markers = [
+    "unit: pure, no database or network",
+    "integration: needs the local PostgreSQL test database",
+]
+filterwarnings = ["error::DeprecationWarning:khata.*"]
+
+[tool.coverage.run]
+source = ["src/khata"]
+branch = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "C4", "RUF", "S"]
+ignore = ["S101"]  # assert is how tests assert
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S105", "S106"]  # test fixtures carry obvious dummy passwords
+"migrations/*" = ["E501"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unreachable = true
+
+# The deterministic engines must stay pure: no database, no framework, no I/O.
+# `make imports` fails the build if that is ever violated.
+[tool.importlinter]
+root_packages = ["khata"]
+
+[[tool.importlinter.contracts]]
+name = "Engines are pure"
+type = "forbidden"
+source_modules = ["khata.engines"]
+forbidden_modules = ["khata.core", "khata.modules", "sqlalchemy", "fastapi", "alembic"]
+
+[[tool.importlinter.contracts]]
+name = "Core does not depend on modules"
+type = "forbidden"
+source_modules = ["khata.core"]
+forbidden_modules = ["khata.modules"]
