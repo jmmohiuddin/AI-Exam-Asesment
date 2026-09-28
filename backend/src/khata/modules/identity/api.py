@@ -1,22 +1,34 @@
-"""Authentication endpoints: ``/v1/auth/*`` and ``/v1/me``."""
+"""Authentication endpoints: ``/v1/auth/*`` and ``/v1/me``.
+
+The response shapes are the ones ``web/src/auth/types.ts`` already encodes, so the
+two halves of the product agree without an adapter in between. ``status`` on the
+login response is the discriminator that will carry ``otp_required`` once OTP
+sign-in lands; password-only login always answers ``ok``.
+"""
 
 from __future__ import annotations
 
 import uuid
+from collections import defaultdict
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Header, Response, status
+from fastapi import APIRouter, Cookie, Header, Response, status
 from pydantic import BaseModel, ConfigDict, Field
 
+from khata.core.errors import DomainError
 from khata.core.roles import Role
 from khata.modules.authz.deps import DatabaseDep, PrincipalDep, SettingsDep
+from khata.modules.identity.models import AppUser
 from khata.modules.identity.service import (
     CAPTURE_CLIENT,
     WEB_CLIENT,
     Membership,
     active_memberships,
+    mask_mobile,
+    refresh_session,
     sign_in,
     sign_out,
+    switch_tenant,
 )
 
 router = APIRouter(tags=["auth"])
@@ -31,50 +43,86 @@ class LoginRequest(BaseModel):
     mobile: str = Field(pattern=r"^\+[1-9][0-9]{7,14}$")
     password: str = Field(min_length=1, max_length=256)
     tenant_id: uuid.UUID | None = None
+    device_id: uuid.UUID | None = None
     device_name: str = Field(default="browser", max_length=100)
 
 
-class MembershipOut(BaseModel):
+class SwitchTenantRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     tenant_id: uuid.UUID
-    tenant_name: str
-    role: Role
-    school_id: uuid.UUID | None
-    subject_code: str | None
-
-    @classmethod
-    def of(cls, membership: Membership) -> MembershipOut:
-        return cls(
-            tenant_id=membership.tenant_id,
-            tenant_name=membership.tenant_name,
-            role=membership.role,
-            school_id=membership.school_id,
-            subject_code=membership.subject_code,
-        )
 
 
-class UserOut(BaseModel):
+class AuthUser(BaseModel):
     id: uuid.UUID
-    mobile: str
     name: str
     locale: str
 
 
+class MembershipOut(BaseModel):
+    """All roles a user holds at one school, grouped (the UI reasons per school)."""
+
+    tenant_id: uuid.UUID
+    org_name: str
+    school_id: uuid.UUID | None
+    school_name_bn: str
+    school_name_en: str
+    roles: list[Role]
+
+
 class LoginResponse(BaseModel):
+    status: Literal["ok"] = "ok"
     access_token: str
-    token_type: Literal["Bearer"] = "Bearer"  # noqa: S105 - the OAuth scheme name
     expires_in: int
-    active_tenant_id: uuid.UUID | None
-    user: UserOut
-    memberships: list[MembershipOut]
-    #: Only returned to the capture client; web receives it as an HttpOnly cookie.
+    user: AuthUser
+    #: Returned to the capture client only; web receives it as an HttpOnly cookie.
     refresh_token: str | None = None
 
 
+class TokenResponse(BaseModel):
+    access_token: str
+    expires_in: int
+
+
 class MeResponse(BaseModel):
-    user: UserOut
-    active_tenant_id: uuid.UUID | None
+    id: uuid.UUID
+    name: str
+    mobile_masked: str
+    locale: str
+    preferences: dict[str, object] | None
+    platform_role: str | None
     memberships: list[MembershipOut]
-    roles: list[Role]
+    active_tenant_id: uuid.UUID | None
+
+
+def _group_memberships(memberships: tuple[Membership, ...]) -> list[MembershipOut]:
+    grouped: dict[tuple[uuid.UUID, uuid.UUID | None], list[Membership]] = defaultdict(list)
+    for membership in memberships:
+        grouped[(membership.tenant_id, membership.school_id)].append(membership)
+    return [
+        MembershipOut(
+            tenant_id=tenant_id,
+            org_name=items[0].tenant_name,
+            school_id=school_id,
+            school_name_bn=items[0].school_name_bn,
+            school_name_en=items[0].school_name_en,
+            roles=sorted({item.role for item in items}),
+        )
+        for (tenant_id, school_id), items in grouped.items()
+    ]
+
+
+def _set_refresh_cookie(response: Response, token: str, *, max_age: int, secure: bool) -> None:
+    # Not readable by JavaScript, so an XSS bug cannot exfiltrate the refresh token.
+    response.set_cookie(
+        REFRESH_COOKIE,
+        token,
+        max_age=max_age,
+        httponly=True,
+        secure=secure,
+        samesite="strict",
+        path=REFRESH_COOKIE_PATH,
+    )
 
 
 @router.post("/auth/login", response_model=LoginResponse)
@@ -98,35 +146,58 @@ def login(
         body = LoginResponse(
             access_token=result.access_token,
             expires_in=result.expires_in,
-            active_tenant_id=result.active_tenant_id,
-            user=UserOut(
-                id=result.user.id,
-                mobile=result.user.mobile,
-                name=result.user.name,
-                locale=result.user.locale,
-            ),
-            memberships=[MembershipOut.of(m) for m in result.memberships],
+            user=AuthUser(id=result.user.id, name=result.user.name, locale=result.user.locale),
             refresh_token=result.refresh_token if x_client == CAPTURE_CLIENT else None,
         )
         refresh = result.refresh_token
-        idle = (
-            settings.refresh_idle_web_seconds
-            if x_client == WEB_CLIENT
-            else settings.refresh_idle_capture_seconds
-        )
 
     if x_client == WEB_CLIENT:
-        # Not readable by JavaScript, so an XSS bug cannot exfiltrate the refresh token.
-        response.set_cookie(
-            REFRESH_COOKIE,
+        _set_refresh_cookie(
+            response,
             refresh,
-            max_age=idle,
-            httponly=True,
+            max_age=settings.refresh_idle_web_seconds,
             secure=settings.cookie_secure,
-            samesite="strict",
-            path=REFRESH_COOKIE_PATH,
         )
     return body
+
+
+@router.post("/auth/refresh", response_model=TokenResponse)
+def refresh(
+    response: Response,
+    database: DatabaseDep,
+    settings: SettingsDep,
+    khata_refresh: Annotated[str | None, Cookie(alias=REFRESH_COOKIE)] = None,
+) -> TokenResponse:
+    """Rotate the refresh cookie and mint a new access token."""
+    if not khata_refresh:
+        raise DomainError("REFRESH_INVALID")
+    with database.session_scope(None) as session:
+        result = refresh_session(session, settings, raw_token=khata_refresh)
+    _set_refresh_cookie(
+        response,
+        result.refresh_token,
+        max_age=result.idle_seconds,
+        secure=settings.cookie_secure,
+    )
+    return TokenResponse(access_token=result.access_token, expires_in=result.expires_in)
+
+
+@router.post("/auth/switch-tenant", response_model=TokenResponse)
+def switch(
+    payload: SwitchTenantRequest,
+    principal: PrincipalDep,
+    database: DatabaseDep,
+    settings: SettingsDep,
+) -> TokenResponse:
+    with database.session_scope(None, user_id=principal.user_id) as session:
+        access, expires_in = switch_tenant(
+            session,
+            settings,
+            user_id=principal.user_id,
+            session_id=principal.session_id,
+            tenant_id=payload.tenant_id,
+        )
+    return TokenResponse(access_token=access, expires_in=expires_in)
 
 
 @router.post("/auth/logout", status_code=status.HTTP_204_NO_CONTENT)
@@ -146,20 +217,18 @@ def logout(
 
 @router.get("/me", response_model=MeResponse)
 def me(principal: PrincipalDep, database: DatabaseDep) -> MeResponse:
-    from khata.modules.identity.models import AppUser
-
     with database.session_scope(None, user_id=principal.user_id) as session:
         user = session.get(AppUser, principal.user_id)
         if user is None:  # pragma: no cover - the token proved the user exists
-            from khata.core.errors import DomainError
-
             raise DomainError("UNAUTHENTICATED")
         memberships = active_memberships(session, principal.user_id)
-        out = UserOut(id=user.id, mobile=user.mobile, name=user.name, locale=user.locale)
-
-    return MeResponse(
-        user=out,
-        active_tenant_id=principal.tenant_id,
-        memberships=[MembershipOut.of(m) for m in memberships],
-        roles=sorted(principal.roles),
-    )
+        return MeResponse(
+            id=user.id,
+            name=user.name,
+            mobile_masked=mask_mobile(user.mobile),
+            locale=user.locale,
+            preferences=dict(user.preferences or {}),
+            platform_role=user.platform_role,
+            memberships=_group_memberships(memberships),
+            active_tenant_id=principal.tenant_id,
+        )
