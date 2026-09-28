@@ -13,6 +13,7 @@ ruvector.db
 graphify-out/
 agentdb.rvf
 agentdb.rvf.lock
+.playwright-mcp/
 
 # Python
 __pycache__/
