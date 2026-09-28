@@ -2,7 +2,9 @@ import { useState, type FormEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate, useLocation } from "react-router";
 import { login } from "../auth/authApi";
+import { getDeviceId } from "../auth/device";
 import { normalizeMobile } from "../auth/mobile";
+import { OtpStep } from "./OtpStep";
 import { useSession } from "../auth/SessionContext";
 import type { LoginLocationState } from "../auth/RequireAuth";
 import { isApiError } from "../api/problem";
@@ -19,10 +21,28 @@ export function LoginPage(): ReactNode {
   const [fieldError, setFieldError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [challenge, setChallenge] = useState<{
+    id: string;
+    mobile: string;
+  } | null>(null);
 
   if (session.status === "authenticated") {
     const from = (location.state as LoginLocationState | null)?.from;
     return <Navigate to={from ?? "/"} replace />;
+  }
+
+  if (challenge) {
+    return (
+      <OtpStep
+        challengeId={challenge.id}
+        mobile={challenge.mobile}
+        onVerified={session.completeLogin}
+        onCancel={() => {
+          setChallenge(null);
+          setPassword("");
+        }}
+      />
+    );
   }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
@@ -45,13 +65,18 @@ export function LoginPage(): ReactNode {
 
     setSubmitting(true);
     try {
-      const result = await login({ mobile: e164, password });
+      const result = await login({
+        mobile: e164,
+        password,
+        // Sent only when this browser has signed in before; it is what lets a
+        // known device skip the code.
+        ...(getDeviceId() ? { device_id: getDeviceId() } : {}),
+      });
       if (result.status === "ok") {
         await session.completeLogin(result.access_token);
         return;
       }
-      // OTP sign-in is specified but not built yet; say so rather than fail silently.
-      setFormError(t("auth:otp.newDevice"));
+      setChallenge({ id: result.challenge_id, mobile: e164 });
     } catch (error) {
       setFormError(
         isApiError(error)

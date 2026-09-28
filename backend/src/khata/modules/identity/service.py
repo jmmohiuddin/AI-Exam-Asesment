@@ -10,12 +10,13 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from typing import Literal
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from khata.core.config import Settings
-from khata.core.db import bind_context
+from khata.core.db import Database, bind_context
 from khata.core.errors import DomainError
 from khata.core.models import utcnow
 from khata.core.roles import Role
@@ -26,11 +27,17 @@ from khata.core.security import (
     new_refresh_token,
     verify_password,
 )
+from khata.modules.identity.delivery import OtpSender
 from khata.modules.identity.models import AppUser, AuthSession, Device, RefreshToken
+from khata.modules.identity.otp import PURPOSE_LOGIN, Challenge, start_challenge
+from khata.modules.identity.otp import verify as verify_challenge
 from khata.modules.org.models import Organization, RoleAssignment, School
 
-WEB_CLIENT = "web"
-CAPTURE_CLIENT = "capture"
+#: The two clients that sign in. Typed so the API layer's ``X-Client`` header
+#: literal and these constants are the same type to the checker.
+ClientKind = Literal["web", "capture"]
+WEB_CLIENT: ClientKind = "web"
+CAPTURE_CLIENT: ClientKind = "capture"
 MIN_PASSWORD_LENGTH = 10
 
 
@@ -45,6 +52,13 @@ class Membership:
     school_name_bn: str
     school_name_en: str
     subject_code: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class OtpRequired:
+    """Password accepted, but this device has never signed this account in."""
+
+    challenge: Challenge
 
 
 @dataclass(frozen=True, slots=True)
@@ -106,19 +120,74 @@ def _register_failure(session: Session, user: AppUser, settings: Settings, now: 
 def sign_in(
     session: Session,
     settings: Settings,
+    sender: OtpSender,
     *,
     mobile: str,
     password: str,
     client: str = WEB_CLIENT,
     device_name: str = "browser",
+    device_id: uuid.UUID | None = None,
     tenant_id: uuid.UUID | None = None,
-) -> SignInResult:
-    """Verify a password and open a session.
+) -> SignInResult | OtpRequired:
+    """Verify a password, then either open a session or ask for a code.
 
-    Always performs one argon2 verification, so a missing account and a wrong
-    password take the same time and return the same error.
+    A password alone opens a session only from a device this account has already
+    used (08 §5.2). From anywhere else the answer is an OTP challenge, which is why
+    the return type is a union: the web client discriminates on ``status``.
     """
     now = utcnow()
+    user = _authenticate(session, settings, mobile=mobile, password=password, now=now)
+    device = _trusted_device(session, user_id=user.id, device_id=device_id, client=client)
+    if device is None:
+        challenge = start_challenge(
+            session, settings, sender, user=user, purpose=PURPOSE_LOGIN, client=client, now=now
+        )
+        return OtpRequired(challenge=challenge)
+    device.last_seen_at = now
+    return _open_session(
+        session, settings, user=user, device=device, client=client, tenant_id=tenant_id, now=now
+    )
+
+
+def complete_otp_login(
+    session: Session,
+    settings: Settings,
+    database: Database,
+    *,
+    challenge_id: uuid.UUID,
+    code: str,
+    client: str = WEB_CLIENT,
+    device_name: str = "browser",
+    tenant_id: uuid.UUID | None = None,
+) -> SignInResult:
+    """Consume a login challenge and register the device it came from."""
+    now = utcnow()
+    challenge = verify_challenge(
+        session,
+        settings,
+        database,
+        challenge_id=challenge_id,
+        code=code,
+        purpose=PURPOSE_LOGIN,
+        now=now,
+    )
+    user = session.get(AppUser, challenge.user_id)
+    if user is None or not user.is_active:  # pragma: no cover - FK guarantees the row
+        raise DomainError("INVALID_CREDENTIALS")
+    bind_context(session, tenant_id=None, user_id=user.id)
+    device = Device(user_id=user.id, name=device_name, kind=client, last_seen_at=now)
+    session.add(device)
+    session.flush()
+    return _open_session(
+        session, settings, user=user, device=device, client=client, tenant_id=tenant_id, now=now
+    )
+
+
+def _authenticate(
+    session: Session, settings: Settings, *, mobile: str, password: str, now: datetime
+) -> AppUser:
+    """Check the password. One argon2 verification either way, so a missing account
+    and a wrong password take the same time and give the same answer."""
     user = session.scalar(select(AppUser).where(AppUser.mobile == mobile))
 
     ok, upgraded_hash = verify_password(password, user.password_hash if user else None)
@@ -139,15 +208,39 @@ def sign_in(
 
     # The caller could not bind a user before the password was checked. The
     # membership_read policies key off app.user_id, so bind it now that we know who
-    # this is; the tenant stays unset until one is selected below.
+    # this is; the tenant stays unset until one is selected.
     bind_context(session, tenant_id=None, user_id=user.id)
+    session.flush()
+    return user
+
+
+def _trusted_device(
+    session: Session, *, user_id: uuid.UUID, device_id: uuid.UUID | None, client: str
+) -> Device | None:
+    """The named device, if it belongs to this user, is live and matches the client."""
+    if device_id is None:
+        return None
+    device = session.get(Device, device_id)
+    if device is None or device.user_id != user_id:
+        return None
+    if device.revoked_at is not None or device.kind != client:
+        return None
+    return device
+
+
+def _open_session(
+    session: Session,
+    settings: Settings,
+    *,
+    user: AppUser,
+    device: Device,
+    client: str,
+    tenant_id: uuid.UUID | None,
+    now: datetime,
+) -> SignInResult:
     memberships = active_memberships(session, user.id)
     active_tenant = _resolve_active_tenant(user, memberships, tenant_id)
     user.last_active_tenant_id = active_tenant
-
-    device = Device(user_id=user.id, name=device_name, kind=client)
-    session.add(device)
-    session.flush()
 
     idle_seconds = (
         settings.refresh_idle_web_seconds

@@ -2,28 +2,34 @@
 
 The response shapes are the ones ``web/src/auth/types.ts`` already encodes, so the
 two halves of the product agree without an adapter in between. ``status`` on the
-login response is the discriminator that will carry ``otp_required`` once OTP
-sign-in lands; password-only login always answers ``ok``.
+login response is the discriminator: ``otp_required`` from a device the account
+has never used, ``ok`` from one it has.
 """
 
 from __future__ import annotations
 
 import uuid
 from collections import defaultdict
+from datetime import datetime
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Cookie, Header, Response, status
+from fastapi import APIRouter, Cookie, Depends, Header, Request, Response, status
 from pydantic import BaseModel, ConfigDict, Field
 
 from khata.core.errors import DomainError
 from khata.core.roles import Role
 from khata.modules.authz.deps import DatabaseDep, PrincipalDep, SettingsDep
+from khata.modules.identity.delivery import OtpSender
 from khata.modules.identity.models import AppUser
+from khata.modules.identity.otp import resend as resend_challenge
 from khata.modules.identity.service import (
     CAPTURE_CLIENT,
     WEB_CLIENT,
     Membership,
+    OtpRequired,
+    SignInResult,
     active_memberships,
+    complete_otp_login,
     mask_mobile,
     refresh_session,
     sign_in,
@@ -43,8 +49,25 @@ class LoginRequest(BaseModel):
     mobile: str = Field(pattern=r"^\+[1-9][0-9]{7,14}$")
     password: str = Field(min_length=1, max_length=256)
     tenant_id: uuid.UUID | None = None
+    #: A device id the client kept from an earlier OTP sign-in. Unknown, revoked
+    #: or someone else's id simply means a code is required.
     device_id: uuid.UUID | None = None
     device_name: str = Field(default="browser", max_length=100)
+
+
+class OtpVerifyRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    challenge_id: uuid.UUID
+    code: str = Field(pattern=r"^[0-9]{6}$")
+    device_name: str = Field(default="browser", max_length=100)
+    tenant_id: uuid.UUID | None = None
+
+
+class OtpResendRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    challenge_id: uuid.UUID
 
 
 class SwitchTenantRequest(BaseModel):
@@ -77,6 +100,29 @@ class LoginResponse(BaseModel):
     user: AuthUser
     #: Returned to the capture client only; web receives it as an HttpOnly cookie.
     refresh_token: str | None = None
+
+
+class LoginOtpRequired(BaseModel):
+    """No token yet: the code proves the device, not the password."""
+
+    status: Literal["otp_required"] = "otp_required"
+    challenge_id: uuid.UUID
+    otp_expires_at: datetime
+
+
+class OtpVerifyResponse(BaseModel):
+    status: Literal["ok"] = "ok"
+    access_token: str
+    expires_in: int
+    #: The client stores this and sends it on later logins to skip the code.
+    device_id: uuid.UUID
+    user: AuthUser
+    refresh_token: str | None = None
+
+
+class OtpResendResponse(BaseModel):
+    challenge_id: uuid.UUID
+    otp_expires_at: datetime
 
 
 class TokenResponse(BaseModel):
@@ -112,6 +158,14 @@ def _group_memberships(memberships: tuple[Membership, ...]) -> list[MembershipOu
     ]
 
 
+def get_otp_sender(request: Request) -> OtpSender:
+    sender: OtpSender = request.app.state.otp_sender
+    return sender
+
+
+OtpSenderDep = Annotated[OtpSender, Depends(get_otp_sender)]
+
+
 def _set_refresh_cookie(response: Response, token: str, *, max_age: int, secure: bool) -> None:
     # Not readable by JavaScript, so an XSS bug cannot exfiltrate the refresh token.
     response.set_cookie(
@@ -125,27 +179,76 @@ def _set_refresh_cookie(response: Response, token: str, *, max_age: int, secure:
     )
 
 
-@router.post("/auth/login", response_model=LoginResponse)
+def _signed_in_body(result: SignInResult, client: str) -> LoginResponse:
+    return LoginResponse(
+        access_token=result.access_token,
+        expires_in=result.expires_in,
+        user=AuthUser(id=result.user.id, name=result.user.name, locale=result.user.locale),
+        refresh_token=result.refresh_token if client == CAPTURE_CLIENT else None,
+    )
+
+
+@router.post("/auth/login", response_model=LoginResponse | LoginOtpRequired)
 def login(
     payload: LoginRequest,
     response: Response,
     database: DatabaseDep,
     settings: SettingsDep,
+    sender: OtpSenderDep,
     x_client: Annotated[Literal["web", "capture"], Header(alias="X-Client")] = WEB_CLIENT,
-) -> LoginResponse:
+) -> LoginResponse | LoginOtpRequired:
     with database.session_scope(None) as session:
         result = sign_in(
             session,
             settings,
+            sender,
             mobile=payload.mobile,
             password=payload.password,
             client=x_client,
             device_name=payload.device_name,
+            device_id=payload.device_id,
             tenant_id=payload.tenant_id,
         )
-        body = LoginResponse(
+        if isinstance(result, OtpRequired):
+            return LoginOtpRequired(
+                challenge_id=result.challenge.id, otp_expires_at=result.challenge.expires_at
+            )
+        body = _signed_in_body(result, x_client)
+        refresh = result.refresh_token
+
+    if x_client == WEB_CLIENT:
+        _set_refresh_cookie(
+            response,
+            refresh,
+            max_age=settings.refresh_idle_web_seconds,
+            secure=settings.cookie_secure,
+        )
+    return body
+
+
+@router.post("/auth/otp/verify", response_model=OtpVerifyResponse)
+def verify_otp(
+    payload: OtpVerifyRequest,
+    response: Response,
+    database: DatabaseDep,
+    settings: SettingsDep,
+    x_client: Annotated[Literal["web", "capture"], Header(alias="X-Client")] = WEB_CLIENT,
+) -> OtpVerifyResponse:
+    with database.session_scope(None) as session:
+        result = complete_otp_login(
+            session,
+            settings,
+            database,
+            challenge_id=payload.challenge_id,
+            code=payload.code,
+            client=x_client,
+            device_name=payload.device_name,
+            tenant_id=payload.tenant_id,
+        )
+        body = OtpVerifyResponse(
             access_token=result.access_token,
             expires_in=result.expires_in,
+            device_id=result.session.device_id,
             user=AuthUser(id=result.user.id, name=result.user.name, locale=result.user.locale),
             refresh_token=result.refresh_token if x_client == CAPTURE_CLIENT else None,
         )
@@ -159,6 +262,19 @@ def login(
             secure=settings.cookie_secure,
         )
     return body
+
+
+@router.post("/auth/otp/resend", response_model=OtpResendResponse)
+def resend_otp(
+    payload: OtpResendRequest,
+    database: DatabaseDep,
+    settings: SettingsDep,
+    sender: OtpSenderDep,
+) -> OtpResendResponse:
+    """Re-issue the code for a live challenge. The previous code stops working."""
+    with database.session_scope(None) as session:
+        challenge = resend_challenge(session, settings, sender, challenge_id=payload.challenge_id)
+    return OtpResendResponse(challenge_id=challenge.id, otp_expires_at=challenge.expires_at)
 
 
 @router.post("/auth/refresh", response_model=TokenResponse)

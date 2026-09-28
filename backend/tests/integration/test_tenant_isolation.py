@@ -9,6 +9,7 @@ and writes even when the caller supplies a valid id from another tenant.
 from __future__ import annotations
 
 import uuid
+from collections.abc import Callable
 
 import pytest
 from fastapi.testclient import TestClient
@@ -52,10 +53,8 @@ def _seed_tenant(database: Database, *, name: str, mobile: str) -> dict[str, uui
         }
 
 
-def _login(client: TestClient, mobile: str, password: str) -> dict[str, str]:
-    response = client.post("/v1/auth/login", json={"mobile": mobile, "password": password})
-    assert response.status_code == 200, response.text
-    return {"Authorization": f"Bearer {response.json()['access_token']}"}
+def _login(sign_in: Callable[..., dict], mobile: str, password: str) -> dict[str, str]:
+    return {"Authorization": f"Bearer {sign_in(mobile, password)['access_token']}"}
 
 
 def _create_exam(client: TestClient, auth: dict[str, str], school_id: uuid.UUID) -> str:
@@ -113,12 +112,14 @@ def test_organization_itself_is_tenant_scoped(database: Database) -> None:
     assert enabled and forced
 
 
-def test_a_tenant_cannot_read_another_tenants_exam(client: TestClient, database: Database) -> None:
+def test_a_tenant_cannot_read_another_tenants_exam(
+    sign_in: Callable[..., dict], client: TestClient, database: Database
+) -> None:
     first = _seed_tenant(database, name="First School", mobile="+8801710000001")
     second = _seed_tenant(database, name="Second School", mobile="+8801710000002")
 
-    auth_first = _login(client, str(first["mobile"]), str(first["password"]))
-    auth_second = _login(client, str(second["mobile"]), str(second["password"]))
+    auth_first = _login(sign_in, str(first["mobile"]), str(first["password"]))
+    auth_second = _login(sign_in, str(second["mobile"]), str(second["password"]))
 
     exam_id = _create_exam(client, auth_first, first["school_id"])  # type: ignore[arg-type]
 
@@ -132,12 +133,12 @@ def test_a_tenant_cannot_read_another_tenants_exam(client: TestClient, database:
 
 
 def test_a_tenant_cannot_add_an_item_to_another_tenants_exam(
-    client: TestClient, database: Database
+    sign_in: Callable[..., dict], client: TestClient, database: Database
 ) -> None:
     first = _seed_tenant(database, name="Third School", mobile="+8801710000003")
     second = _seed_tenant(database, name="Fourth School", mobile="+8801710000004")
-    auth_first = _login(client, str(first["mobile"]), str(first["password"]))
-    auth_second = _login(client, str(second["mobile"]), str(second["password"]))
+    auth_first = _login(sign_in, str(first["mobile"]), str(first["password"]))
+    auth_second = _login(sign_in, str(second["mobile"]), str(second["password"]))
 
     exam_id = _create_exam(client, auth_first, first["school_id"])  # type: ignore[arg-type]
 
@@ -159,10 +160,12 @@ def test_requests_without_a_token_are_rejected(client: TestClient) -> None:
     assert response.json()["code"] == "UNAUTHENTICATED"
 
 
-def test_a_signed_out_session_stops_working(client: TestClient, database: Database) -> None:
+def test_a_signed_out_session_stops_working(
+    sign_in: Callable[..., dict], client: TestClient, database: Database
+) -> None:
     """Signing out must take effect immediately, not when the access token expires."""
     tenant = _seed_tenant(database, name="Fifth School", mobile="+8801710000005")
-    auth = _login(client, str(tenant["mobile"]), str(tenant["password"]))
+    auth = _login(sign_in, str(tenant["mobile"]), str(tenant["password"]))
     exam_id = _create_exam(client, auth, tenant["school_id"])  # type: ignore[arg-type]
 
     assert client.get(f"/v1/exams/{exam_id}", headers=auth).status_code == 200
@@ -173,7 +176,9 @@ def test_a_signed_out_session_stops_working(client: TestClient, database: Databa
     assert after.json()["code"] == "SESSION_REVOKED"
 
 
-def test_a_capture_operator_cannot_decide_marks(client: TestClient, database: Database) -> None:
+def test_a_capture_operator_cannot_decide_marks(
+    sign_in: Callable[..., dict], client: TestClient, database: Database
+) -> None:
     """Role separation: capture is not marking (08 §5.3)."""
     from khata.modules.identity.service import create_user
     from khata.modules.org.models import Organization, RoleAssignment, School
@@ -199,7 +204,7 @@ def test_a_capture_operator_cannot_decide_marks(client: TestClient, database: Da
         session.flush()
         school_id = school.id
 
-    auth = _login(client, "+8801710000006", password)
+    auth = _login(sign_in, "+8801710000006", password)
 
     # A capture operator may not author an exam...
     created = client.post(

@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
-import { afterAll, afterEach, beforeAll } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach } from "vitest";
 import { server } from "../mocks/server";
 import { resetMockState } from "../mocks/handlers";
 import { i18n } from "../i18n";
@@ -10,14 +10,19 @@ beforeAll(() => {
   server.listen({ onUnhandledRequest: "error" });
 });
 
-afterEach(async () => {
+// Before, not after: resetting on the way out leaves the first test in whatever
+// language i18n initialised with, which is bn.
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
+});
+
+afterEach(() => {
   cleanup();
   server.resetHandlers();
   resetMockState();
   clearAccessToken();
   window.localStorage.clear();
   window.sessionStorage.clear();
-  await i18n.changeLanguage("en");
 });
 
 afterAll(() => {

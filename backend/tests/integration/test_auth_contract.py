@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -11,14 +13,8 @@ from khata.modules.identity.service import mask_mobile
 pytestmark = pytest.mark.integration
 
 
-def _login(client: TestClient, seed: dict[str, object]) -> dict:
-    response = client.post(
-        "/v1/auth/login",
-        json={"mobile": seed["teacher_mobile"], "password": seed["password"]},
-        headers={"X-Client": "web"},
-    )
-    assert response.status_code == 200, response.text
-    return response.json()
+def _login(sign_in: Callable[..., dict], seed: dict[str, object]) -> dict:
+    return sign_in(str(seed["teacher_mobile"]), str(seed["password"]))
 
 
 @pytest.mark.parametrize(
@@ -42,8 +38,10 @@ def test_mask_mobile_does_not_leak_the_length() -> None:
     assert len(short) == len(long)
 
 
-def test_login_shape_matches_the_web_client(client: TestClient, seed: dict[str, object]) -> None:
-    body = _login(client, seed)
+def test_login_shape_matches_the_web_client(
+    sign_in: Callable[..., dict], client: TestClient, seed: dict[str, object]
+) -> None:
+    body = _login(sign_in, seed)
     assert body["status"] == "ok"
     assert body["expires_in"] > 0
     assert set(body["user"]) == {"id", "name", "locale"}
@@ -53,19 +51,16 @@ def test_login_shape_matches_the_web_client(client: TestClient, seed: dict[str, 
 
 
 def test_capture_client_gets_the_refresh_token_in_the_body(
-    client: TestClient, seed: dict[str, object]
+    sign_in: Callable[..., dict], seed: dict[str, object]
 ) -> None:
-    response = client.post(
-        "/v1/auth/login",
-        json={"mobile": seed["teacher_mobile"], "password": seed["password"]},
-        headers={"X-Client": "capture"},
-    )
-    assert response.status_code == 200, response.text
-    assert response.json()["refresh_token"]
+    body = sign_in(str(seed["teacher_mobile"]), str(seed["password"]), client_kind="capture")
+    assert body["refresh_token"]
 
 
-def test_me_shape_matches_the_web_client(client: TestClient, seed: dict[str, object]) -> None:
-    token = _login(client, seed)["access_token"]
+def test_me_shape_matches_the_web_client(
+    sign_in: Callable[..., dict], client: TestClient, seed: dict[str, object]
+) -> None:
+    token = _login(sign_in, seed)["access_token"]
     response = client.get("/v1/me", headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 200, response.text
     body = response.json()
@@ -94,9 +89,9 @@ def test_me_shape_matches_the_web_client(client: TestClient, seed: dict[str, obj
 
 
 def test_refresh_rotates_the_cookie_and_returns_a_new_access_token(
-    client: TestClient, seed: dict[str, object]
+    sign_in: Callable[..., dict], client: TestClient, seed: dict[str, object]
 ) -> None:
-    first = _login(client, seed)
+    first = _login(sign_in, seed)
     original_cookie = client.cookies[REFRESH_COOKIE]
 
     response = client.post("/v1/auth/refresh")
@@ -106,10 +101,10 @@ def test_refresh_rotates_the_cookie_and_returns_a_new_access_token(
 
 
 def test_replaying_a_rotated_refresh_token_kills_the_session(
-    client: TestClient, seed: dict[str, object]
+    sign_in: Callable[..., dict], client: TestClient, seed: dict[str, object]
 ) -> None:
     """A replayed refresh cookie means it leaked: revoke the family, do not serve it."""
-    _login(client, seed)
+    _login(sign_in, seed)
     stolen = client.cookies[REFRESH_COOKIE]
 
     assert client.post("/v1/auth/refresh").status_code == 200
@@ -132,11 +127,11 @@ def test_refresh_without_a_cookie_is_rejected(client: TestClient) -> None:
 
 
 def test_switching_to_a_tenant_you_do_not_belong_to_is_refused(
-    client: TestClient, seed: dict[str, object]
+    sign_in: Callable[..., dict], client: TestClient, seed: dict[str, object]
 ) -> None:
     import uuid
 
-    token = _login(client, seed)["access_token"]
+    token = _login(sign_in, seed)["access_token"]
     response = client.post(
         "/v1/auth/switch-tenant",
         headers={"Authorization": f"Bearer {token}"},

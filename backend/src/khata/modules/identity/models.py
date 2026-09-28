@@ -81,3 +81,37 @@ class RefreshToken(Base):
     idle_expires_at: Mapped[datetime] = mapped_column(nullable=False)
     rotated_at: Mapped[datetime | None] = mapped_column(nullable=True)
     revoked_at: Mapped[datetime | None] = mapped_column(nullable=True)
+
+
+class OtpChallenge(Base):
+    """One OTP in flight. ``code_hmac`` is keyed and bound to this row's id."""
+
+    __tablename__ = "otp_challenge"
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("app_user.id"), nullable=False)
+    purpose: Mapped[str] = mapped_column(Text, nullable=False)
+    step_up_purpose: Mapped[str | None] = mapped_column(Text, nullable=True)
+    session_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("auth_session.id"), nullable=True
+    )
+    client: Mapped[str] = mapped_column(Text, nullable=False)
+    code_hmac: Mapped[str] = mapped_column(Text, nullable=False)
+    attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    send_count: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    expires_at: Mapped[datetime] = mapped_column(nullable=False)
+    last_sent_at: Mapped[datetime] = mapped_column(nullable=False)
+    consumed_at: Mapped[datetime | None] = mapped_column(nullable=True)
+    dead_at: Mapped[datetime | None] = mapped_column(nullable=True)
+    created_at: Mapped[datetime] = created_at_column()
+
+
+class OtpSend(Base):
+    """One delivery attempt, kept so the per-hour cap survives a restart."""
+
+    __tablename__ = "otp_send"
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("app_user.id"), nullable=False)
+    challenge_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("otp_challenge.id"), nullable=False)
+    sent_at: Mapped[datetime] = created_at_column()

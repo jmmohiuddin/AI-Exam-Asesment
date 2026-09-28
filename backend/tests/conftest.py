@@ -11,8 +11,9 @@ from __future__ import annotations
 import os
 import subprocess
 import sys
+import tempfile
 import uuid
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from pathlib import Path
 
 import pytest
@@ -62,11 +63,13 @@ def _required_env(name: str) -> str:
 def test_settings() -> Settings:
     """Settings pointed at ``khata_test``, borrowing the dev secrets."""
     base = Settings()  # type: ignore[call-arg]  # from .env
+    otp_log = Path(tempfile.mkdtemp(prefix="khata-otp-")) / "dev-otp.log"
     return base.model_copy(
         update={
             "env": Environment.TEST,
             "database_url_app": _required_env(TEST_APP_URL_VAR),
             "database_url_owner": _required_env(TEST_OWNER_URL_VAR),
+            "dev_otp_file": otp_log,
         }
     )
 
@@ -188,16 +191,48 @@ def seed(database: Database) -> dict[str, object]:
     return result
 
 
+SignIn = Callable[..., dict]
+
+
 @pytest.fixture
-def auth(client: TestClient, seed: dict[str, object]) -> dict[str, str]:
+def sign_in(client: TestClient) -> SignIn:
+    """Complete a sign-in from an unknown device: password, then the code.
+
+    Every test device is new, so every test sign-in goes through OTP — which is the
+    policy (08 §5.2) and therefore what the tests should be exercising.
+    """
+
+    def _sign_in(mobile: str, password: str, *, client_kind: str = "web") -> dict:
+        started = client.post(
+            "/v1/auth/login",
+            json={"mobile": mobile, "password": password},
+            headers={"X-Client": client_kind},
+        )
+        assert started.status_code == 200, started.text
+        body: dict = started.json()
+        if body["status"] == "ok":
+            return body
+        code = client.app.state.otp_sender.last_code()
+        verified = client.post(
+            "/v1/auth/otp/verify",
+            json={
+                "challenge_id": body["challenge_id"],
+                "code": code,
+                "device_name": "browser",
+            },
+            headers={"X-Client": client_kind},
+        )
+        assert verified.status_code == 200, verified.text
+        return dict(verified.json())
+
+    return _sign_in
+
+
+@pytest.fixture
+def auth(sign_in: SignIn, seed: dict[str, object]) -> dict[str, str]:
     """Authorization header for the seeded teacher."""
-    response = client.post(
-        "/v1/auth/login",
-        json={"mobile": seed["teacher_mobile"], "password": seed["password"]},
-        headers={"X-Client": "web"},
-    )
-    assert response.status_code == 200, response.text
-    return {"Authorization": f"Bearer {response.json()['access_token']}"}
+    body = sign_in(str(seed["teacher_mobile"]), str(seed["password"]))
+    return {"Authorization": f"Bearer {body['access_token']}"}
 
 
 def new_uuid() -> uuid.UUID:

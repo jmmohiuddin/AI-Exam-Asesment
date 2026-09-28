@@ -11,6 +11,14 @@ import { http, HttpResponse } from "msw";
 export const MOCK_ACCESS_TOKEN = "mock-access-token";
 export const MOCK_MOBILE = "+8801712345678";
 export const MOCK_PASSWORD = "correct-horse-battery";
+export const MOCK_DEVICE_ID = "11111111-1111-4111-8111-111111111111";
+export const MOCK_CHALLENGE_ID = "22222222-2222-4222-8222-222222222222";
+export const MOCK_OTP_CODE = "123456";
+export const MOCK_USER = {
+  id: "66666666-6666-4666-8666-666666666666",
+  name: "Rahim Teacher",
+  locale: "en",
+};
 
 const BASE = "/v1";
 
@@ -134,18 +142,54 @@ export const handlers = [
         "Mobile number or password is incorrect.",
       );
     }
+    const known = (body as { device_id?: string }).device_id === MOCK_DEVICE_ID;
+    if (!known) {
+      return HttpResponse.json({
+        status: "otp_required",
+        challenge_id: MOCK_CHALLENGE_ID,
+        otp_expires_at: new Date(Date.now() + 5 * 60_000).toISOString(),
+      });
+    }
     signedIn = true;
     return HttpResponse.json({
       status: "ok",
       access_token: MOCK_ACCESS_TOKEN,
       expires_in: 900,
-      user: {
-        id: "66666666-6666-4666-8666-666666666666",
-        name: "Rahim Teacher",
-        locale: "en",
-      },
+      user: MOCK_USER,
       refresh_token: null,
     });
+  }),
+
+  http.post(`${BASE}/auth/otp/verify`, async ({ request }) => {
+    const body = (await request.json()) as {
+      challenge_id: string;
+      code: string;
+    };
+    if (
+      body.challenge_id !== MOCK_CHALLENGE_ID ||
+      body.code !== MOCK_OTP_CODE
+    ) {
+      return problem(400, "OTP_INVALID", "The code is incorrect.");
+    }
+    signedIn = true;
+    return HttpResponse.json({
+      status: "ok",
+      access_token: MOCK_ACCESS_TOKEN,
+      expires_in: 900,
+      device_id: MOCK_DEVICE_ID,
+      user: MOCK_USER,
+      refresh_token: null,
+    });
+  }),
+
+  http.post(`${BASE}/auth/otp/resend`, async ({ request }) => {
+    const body = (await request.json()) as { challenge_id: string };
+    return body.challenge_id === MOCK_CHALLENGE_ID
+      ? HttpResponse.json({
+          challenge_id: MOCK_CHALLENGE_ID,
+          otp_expires_at: new Date(Date.now() + 5 * 60_000).toISOString(),
+        })
+      : problem(400, "OTP_INVALID", "The code is incorrect.");
   }),
 
   http.post(`${BASE}/auth/refresh`, () =>

@@ -24,6 +24,7 @@ from khata.modules.aigateway.fake import FakeMarkingProvider
 from khata.modules.aigateway.provider import MarkingProvider
 from khata.modules.assessment.api import router as assessment_router
 from khata.modules.identity.api import router as identity_router
+from khata.modules.identity.delivery import build_otp_sender
 
 API_PREFIX = "/v1"
 TITLE = "Khata API"
@@ -52,6 +53,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.settings = resolved
         app.state.db = Database.from_settings(resolved)
         app.state.marking_provider = build_marking_provider(resolved)
+        app.state.otp_sender = build_otp_sender(resolved)
         try:
             yield
         finally:
