@@ -112,9 +112,16 @@ removed. Re-measured at commit `e06abad`:
 | FR-AI-05 verification badges | ⬜ | ✅ (numeric) | `engines/mathcheck`; expressions and equations still report `cannot_verify` |
 | FR-ORG-04 (auth half) | 🟡 | ✅ | OTP on a new device, resend, device trust; `/v1/auth/otp/verify`, `/resend` |
 | FR-RUB-05 answer specs | ✅ | ✅ | Now actually consumed by a checker rather than only stored |
+| FR-REV-10 manual mode | 🟡 | ✅ | A teacher can mark an item the AI never touched, and that exam can be locked |
+| FR-ANL-01 progress | ⬜ | 🟡 | The results ledger shows per-student progress; the exam-level dashboard is still missing |
 
-**Counts:** 14 of 106 FRs delivered in full (was 8), 15 partial, 77 not started.
-Must-priority MVP coverage moves from ≈18% to **≈24%**.
+**Counts:** 15 of 106 FRs delivered in full (was 8), 15 partial, 76 not started.
+Must-priority MVP coverage moves from ≈18% to **≈25%**.
+
+**The slice a user can walk now runs end to end:** sign in (with OTP on a new
+device) → exam list → review a script with the AI's suggestion and evidence →
+override a criterion → lock marks → read the results ledger, in Bangla or
+English. Verified in a browser against the seeded database at each step.
 
 **Fixture corpora now exist** where the TRD demands them: 304 result cases
 (TR-RES-01 asks for ≥200) and 502 numeric cases (TR-MATH-01 asks for 500). Both
@@ -127,6 +134,11 @@ without importing the engine they check.
   unlimited guesses. Now counted in its own transaction.
 - The web test setup reset the language *after* each test, leaving the first test
   of every file running in Bangla. Moved to `beforeEach`.
+- A teacher could not mark an item the AI had never touched, and an exam marked
+  that way could never be locked — so an exam with AI off could not be completed
+  at all. The state machine already had the edges; nothing took them.
+- The results ledger interpolated its pending-item count in Latin digits while
+  every other number on the row was Bangla. Found in the browser, not by a test.
 
 **The blocker list in §5 now reads:** no student entity (1), no capture (3), no
 worker (4), no capability registry (5). The results engine (2) is done.
