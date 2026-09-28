@@ -33,6 +33,9 @@ from khata.engines.results.grading import (
 from khata.engines.results.structure import ComponentMarks, PaperStructure
 
 ZERO = Decimal(0)
+#: Percentages are reported to two places. Decimal division of exact values yields
+#: forms like ``8E+1``, which is 80 but not something a client should have to parse.
+PERCENT_QUANTUM = Decimal("0.01")
 
 
 class ResultPolicy(FrozenModel):
@@ -107,7 +110,8 @@ def compute_subject_result(
         components=components,
         marks=total,
         max_marks=structure.max_marks,
-        percent=percent,
+        # Quantised only after grading, so rounding can never change the band.
+        percent=round_exact(percent, PERCENT_QUANTUM, RoundingMode.HALF_UP),
         letter=grade.letter,
         grade_point=grade.grade_point,
         is_pass=is_pass,

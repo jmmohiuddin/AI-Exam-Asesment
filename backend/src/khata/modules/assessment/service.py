@@ -11,9 +11,10 @@ teacher decision moves it to ``confirmed`` or ``edited`` (spec 07 §4.1, ADR-011
 from __future__ import annotations
 
 import uuid
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from decimal import Decimal
+from types import MappingProxyType
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -376,10 +377,27 @@ def _evaluate_one(
     result.updated_at = utcnow()
 
 
+#: How an exam reaches ``reviewing`` from where it is. An exam marked without AI
+#: (FR-REV-10) still passes through ``processing``, which is what the state machine
+#: models — going straight from ``capturing`` needs rolling mode, and pretending
+#: otherwise would bend the machine rather than use it.
+_PATH_TO_REVIEWING: Mapping[ExamState, tuple[ExamState, ...]] = MappingProxyType(
+    {
+        ExamState.CAPTURING: (ExamState.PROCESSING, ExamState.REVIEWING),
+        ExamState.PROCESSING: (ExamState.REVIEWING,),
+    }
+)
+
+
 def _advance_to_reviewing(exam: Exam) -> None:
-    if exam.state == ExamState.PROCESSING.value:
-        exam.state = transition(ExamState.PROCESSING, ExamState.REVIEWING).value
-        exam.updated_at = utcnow()
+    path = _PATH_TO_REVIEWING.get(ExamState(exam.state))
+    if path is None:
+        return
+    state = ExamState(exam.state)
+    for target in path:
+        state = transition(state, target)
+    exam.state = state.value
+    exam.updated_at = utcnow()
 
 
 # --------------------------------------------------------------------------- review
@@ -417,9 +435,10 @@ def review_item(
     except EngineError as exc:
         raise DomainError("VALIDATION_FAILED", detail=str(exc)) from exc
 
+    state = _ready_to_mark(result)
     target = ItemState.CONFIRMED if accepted_ai and total_override is None else ItemState.EDITED
     try:
-        result.state = transition(ItemState(result.state), target).value
+        result.state = transition(state, target).value
     except EngineError as exc:
         raise _conflict(exc) from exc
 
@@ -432,6 +451,21 @@ def review_item(
     result.updated_at = now
     _refresh_script_total(session, result.script_id)
     return result
+
+
+def _ready_to_mark(result: ItemResult) -> ItemState:
+    """Move an item the AI never touched into ``manual_ready`` first (FR-REV-10).
+
+    An item sits at ``pending`` when no provider ran — AI is off for the cell, the
+    teacher chose manual mode, or the student has no CT-2 consent. Marking must
+    still work: the teacher decides every mark and the AI is optional (PP-1). The
+    state machine already has the edge; nothing was taking it.
+    """
+    state = ItemState(result.state)
+    if state is not ItemState.PENDING:
+        return state
+    result.state = transition(state, ItemState.MANUAL_READY).value
+    return ItemState.MANUAL_READY
 
 
 def _refresh_script_total(session: Session, script_id: uuid.UUID) -> None:
@@ -461,8 +495,14 @@ def _undecided_items(session: Session, exam_id: uuid.UUID) -> int:
 
 
 def lock_marks(session: Session, exam: Exam) -> Exam:
-    """Move ``reviewing -> moderation -> marks_locked`` once every item is decided."""
+    """Move the exam to ``marks_locked`` once every item is decided.
+
+    Locking, not the first decision, is what ends capture. Teachers mark while the
+    last bundles are still arriving, so an exam that was marked without ever being
+    evaluated is walked through ``processing`` and ``reviewing`` here instead.
+    """
     undecided = _undecided_items(session, exam.id)
+    _advance_to_reviewing(exam)
     try:
         state = transition(
             ExamState(exam.state), ExamState.MODERATION, all_items_decided=undecided == 0

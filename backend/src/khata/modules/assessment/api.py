@@ -15,14 +15,17 @@ from khata.modules.aigateway.provider import (
     LOW_CONFIDENCE_THRESHOLD,
     MarkingProvider,
 )
+from khata.modules.assessment import results as results_service
 from khata.modules.assessment import service
 from khata.modules.assessment.models import Exam, ExamCandidate, ExamItem, ItemResult, Script
 from khata.modules.assessment.schemas import (
     AnswerSubmit,
     CandidateCreate,
     CandidateOut,
+    CandidateResultOut,
     ExamCreate,
     ExamOut,
+    ExamResultsOut,
     ItemCreate,
     ItemOut,
     ItemResultOut,
@@ -289,3 +292,43 @@ def decide_item(
 def lock_marks(exam_id: uuid.UUID, principal: PublisherDep, session: TenantSession) -> ExamOut:
     exam = service.lock_marks(session, service.get_exam(session, exam_id))
     return ExamOut.model_validate(exam, from_attributes=True)
+
+
+# ----------------------------------------------------------------------------- results
+
+
+@router.get("/exams/{exam_id}/results", response_model=ExamResultsOut)
+def exam_results(
+    exam_id: uuid.UUID, principal: MarkerDep, session: TenantSession
+) -> ExamResultsOut:
+    """Deterministic totals, grades and pass/fail for every candidate.
+
+    Available before marks are locked so the coordinator can watch the totals
+    form; `provisional` and `pending_items` say how much is still to come.
+    """
+    exam = service.get_exam(session, exam_id)
+    computed = results_service.compute_exam_results(session, exam)
+    return ExamResultsOut(
+        exam_id=exam.id,
+        name=exam.name,
+        subject_code=exam.subject_code,
+        state=exam.state,
+        max_marks=computed.structure.max_marks,
+        provisional=computed.provisional,
+        candidates=[
+            CandidateResultOut(
+                candidate_id=row.candidate.id,
+                roll=row.candidate.roll,
+                name=row.candidate.name,
+                script_id=row.script_id,
+                marks=row.result.marks,
+                max_marks=row.result.max_marks,
+                percent=row.result.percent,
+                letter=row.result.letter,
+                grade_point=row.result.grade_point,
+                is_pass=row.result.is_pass,
+                pending_items=row.pending_items,
+            )
+            for row in computed.candidates
+        ],
+    )

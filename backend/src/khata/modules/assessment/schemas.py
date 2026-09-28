@@ -158,3 +158,32 @@ class ReviewDecision(StrictModel):
     deductions_applied: list[str] = Field(default_factory=list)
     total_override: TotalOverride | None = None
     accepted_ai: bool = False
+
+
+class CandidateResultOut(BaseModel):
+    """One student's line on the ledger (FR-RES-01/02/03)."""
+
+    candidate_id: uuid.UUID
+    roll: str
+    name: str
+    script_id: uuid.UUID | None
+    marks: Decimal
+    max_marks: Decimal
+    percent: Decimal
+    letter: str
+    grade_point: Decimal
+    is_pass: bool
+    #: Items captured or expected but not yet decided. Non-zero means the marks
+    #: above are incomplete, not that the student scored nothing for them.
+    pending_items: int
+
+
+class ExamResultsOut(BaseModel):
+    exam_id: uuid.UUID
+    name: str
+    subject_code: str
+    state: str
+    max_marks: Decimal
+    #: True until marks are locked. A provisional total will still change.
+    provisional: bool
+    candidates: list[CandidateResultOut]

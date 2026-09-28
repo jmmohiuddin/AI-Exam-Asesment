@@ -50,8 +50,8 @@ format:
 	uv run ruff format .
 	uv run ruff check --fix .
 
-typecheck: ## mypy (strict on khata.core)
-	uv run mypy src/khata/core
+typecheck: ## mypy over the whole package
+	uv run mypy src/khata
 
 imports: ## Module boundary contracts
 	uv run lint-imports

@@ -188,6 +188,13 @@ CATALOGUE: Mapping[str, ErrorSpec] = {
         "You cannot remove your own administrator role.",
         "আপনি নিজের প্রশাসকের দায়িত্ব সরাতে পারবেন না।",
     ),
+    # Results
+    "EXAM_HAS_NO_ITEMS": ErrorSpec(
+        409,
+        "No questions yet",
+        "Add the paper's questions before asking for results.",
+        "ফলাফল দেখার আগে প্রশ্নগুলো যোগ করুন।",
+    ),
 }
 
 

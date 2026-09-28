@@ -104,7 +104,7 @@ NCTB_GRADE_SCALE = GradeScale(
         GradeBand(min_percent=Decimal(50), letter="B", grade_point=Decimal("3.0")),
         GradeBand(min_percent=Decimal(40), letter="C", grade_point=Decimal("2.0")),
         GradeBand(min_percent=Decimal(33), letter="D", grade_point=Decimal("1.0")),
-        GradeBand(min_percent=ZERO, letter="F", grade_point=ZERO),
+        GradeBand(min_percent=ZERO, letter="F", grade_point=Decimal("0.0")),
     ),
     pass_percent=Decimal(33),
 )

@@ -13,6 +13,7 @@ from decimal import Decimal
 
 from khata.engines.base import FrozenModel
 from khata.engines.errors import ResultInputError
+from khata.engines.marks import RoundingMode, round_exact
 from khata.engines.results.structure import (
     ChoicePolicy,
     ComponentKind,
@@ -23,6 +24,7 @@ from khata.engines.results.structure import (
 )
 
 ZERO = Decimal(0)
+PERCENT_QUANTUM = Decimal("0.01")
 CHOICE_RULE = "choice_rule"
 
 
@@ -171,7 +173,8 @@ def _result(
     questions: tuple[QuestionResult, ...] = (),
     counted_question_ids: tuple[str, ...] = (),
 ) -> ComponentResult:
-    percent = ZERO if absent else marks * Decimal(100) / spec.max_marks
+    exact = ZERO if absent else marks * Decimal(100) / spec.max_marks
+    percent = round_exact(exact, PERCENT_QUANTUM, RoundingMode.HALF_UP)
     return ComponentResult(
         code=spec.code,
         kind=spec.kind,
