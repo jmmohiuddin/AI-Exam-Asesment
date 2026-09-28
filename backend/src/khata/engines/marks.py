@@ -27,7 +27,7 @@ class RoundingMode(StrEnum):
 
 def to_fraction(value: Number) -> Fraction:
     """Convert an exact number to a Fraction; floats and bools are refused."""
-    if isinstance(value, bool) or isinstance(value, float):
+    if isinstance(value, bool | float):
         raise TypeError(f"inexact or boolean value not allowed in mark arithmetic: {value!r}")
     if isinstance(value, Decimal):
         if not value.is_finite():

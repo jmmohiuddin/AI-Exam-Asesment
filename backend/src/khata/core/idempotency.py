@@ -54,7 +54,9 @@ def request_fingerprint(method: str, path: str, payload: Any) -> str:
 
 def validate_key(key: str) -> str:
     if not _VALID_KEY.match(key):
-        raise DomainError("IDEMPOTENCY_KEY_INVALID", "Use 8–128 characters: letters, digits, . _ : -")
+        raise DomainError(
+            "IDEMPOTENCY_KEY_INVALID", "Use 8–128 characters: letters, digits, . _ : -"
+        )
     return key
 
 

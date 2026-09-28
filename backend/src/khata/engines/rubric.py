@@ -320,9 +320,7 @@ def _warnings(rubric: Rubric, item_max: Decimal) -> Iterator[Issue]:
         )
     for index, cap in enumerate(rubric.caps):
         if cap.max_marks >= item_max:
-            yield Issue(
-                code="cap_has_no_effect", path=f"caps[{index}]", message="cap >= item max"
-            )
+            yield Issue(code="cap_has_no_effect", path=f"caps[{index}]", message="cap >= item max")
     for index, deduction in enumerate(rubric.deductions):
         if deduction.marks > item_max:
             yield Issue(

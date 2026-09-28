@@ -74,7 +74,9 @@ CATALOGUE: Mapping[str, ErrorSpec] = {
         "This change conflicts with the current state.",
         "এই পরিবর্তনটি বর্তমান অবস্থার সাথে সাংঘর্ষিক।",
     ),
-    "ALREADY_EXISTS": ErrorSpec(409, "Already exists", "This already exists.", "এটি আগে থেকেই আছে।"),
+    "ALREADY_EXISTS": ErrorSpec(
+        409, "Already exists", "This already exists.", "এটি আগে থেকেই আছে।"
+    ),
     "RATE_LIMITED": ErrorSpec(
         429,
         "Too many requests",
@@ -301,9 +303,7 @@ async def _domain_error_handler(request: Request, exc: Exception) -> JSONRespons
 
 async def _validation_handler(request: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, RequestValidationError)
-    return problem_response(
-        "VALIDATION_FAILED", request=request, errors=_validation_errors(exc)
-    )
+    return problem_response("VALIDATION_FAILED", request=request, errors=_validation_errors(exc))
 
 
 async def _http_exception_handler(request: Request, exc: Exception) -> JSONResponse:

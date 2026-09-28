@@ -282,13 +282,14 @@ def submit_answer(
         session.flush()
 
     result = session.scalar(
-        select(ItemResult).where(
-            ItemResult.script_id == script.id, ItemResult.item_id == item.id
-        )
+        select(ItemResult).where(ItemResult.script_id == script.id, ItemResult.item_id == item.id)
     )
     if result is None:
         result = ItemResult(
-            tenant_id=exam.tenant_id, script_id=script.id, item_id=item.id, state=ItemState.PENDING.value
+            tenant_id=exam.tenant_id,
+            script_id=script.id,
+            item_id=item.id,
+            state=ItemState.PENDING.value,
         )
         session.add(result)
     elif result.state not in (ItemState.PENDING.value, ItemState.UNMAPPED.value):
@@ -306,7 +307,9 @@ def submit_answer(
 # --------------------------------------------------------------------------- evaluation
 
 
-def evaluate_script(session: Session, provider: MarkingProvider, script: Script) -> list[ItemResult]:
+def evaluate_script(
+    session: Session, provider: MarkingProvider, script: Script
+) -> list[ItemResult]:
     """Run the provider over every pending answer on a script.
 
     An item whose rubric is not AI-eligible, or whose provider call fails, goes to a
@@ -317,9 +320,7 @@ def evaluate_script(session: Session, provider: MarkingProvider, script: Script)
         exam.state = transition(ExamState.CAPTURING, ExamState.PROCESSING).value
         exam.updated_at = utcnow()
 
-    results = list(
-        session.scalars(select(ItemResult).where(ItemResult.script_id == script.id))
-    )
+    results = list(session.scalars(select(ItemResult).where(ItemResult.script_id == script.id)))
     for result in results:
         if result.state != ItemState.PENDING.value:
             continue
@@ -466,7 +467,9 @@ def lock_marks(session: Session, exam: Exam) -> Exam:
         state = transition(
             ExamState(exam.state), ExamState.MODERATION, all_items_decided=undecided == 0
         )
-        state = transition(state, ExamState.MARKS_LOCKED, completeness_ok=True, moderation_done=True)
+        state = transition(
+            state, ExamState.MARKS_LOCKED, completeness_ok=True, moderation_done=True
+        )
     except EngineError as exc:
         if undecided:
             raise DomainError(

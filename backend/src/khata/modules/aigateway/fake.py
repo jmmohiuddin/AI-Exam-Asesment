@@ -24,9 +24,34 @@ PROMPT_VERSION = "fake-v1"
 # Tokens too common to be evidence of anything.
 _STOPWORDS = frozenset(
     {
-        "the", "a", "an", "of", "and", "or", "is", "are", "to", "in", "for",
-        "that", "this", "it", "as", "be", "with", "on", "by", "from",
-        "এবং", "বা", "এই", "সেই", "হয়", "করে", "থেকে", "জন্য",
+        "the",
+        "a",
+        "an",
+        "of",
+        "and",
+        "or",
+        "is",
+        "are",
+        "to",
+        "in",
+        "for",
+        "that",
+        "this",
+        "it",
+        "as",
+        "be",
+        "with",
+        "on",
+        "by",
+        "from",
+        "এবং",
+        "বা",
+        "এই",
+        "সেই",
+        "হয়",
+        "করে",
+        "থেকে",
+        "জন্য",
     }
 )
 _MIN_TOKEN_LENGTH = 2
@@ -79,9 +104,7 @@ class FakeMarkingProvider:
         if not context.answer_text.strip():
             return Suggestion(
                 decisions=tuple(
-                    CriterionDecision(
-                        criterion_id=criterion.id, decision=Decision.CANNOT_DETERMINE
-                    )
+                    CriterionDecision(criterion_id=criterion.id, decision=Decision.CANNOT_DETERMINE)
                     for criterion in criteria
                 ),
                 confidence=_CONFIDENCE_FLOOR,

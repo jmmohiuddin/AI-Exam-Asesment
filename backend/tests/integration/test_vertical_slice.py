@@ -197,9 +197,9 @@ def test_blank_answer_is_flagged_for_the_teacher(
     ).json()
 
     client.post(f"/v1/scripts/{submitted['script_id']}/evaluate", headers=auth)
-    card = client.get(
-        f"/v1/scripts/{submitted['script_id']}/review", headers=auth
-    ).json()["items"][0]
+    card = client.get(f"/v1/scripts/{submitted['script_id']}/review", headers=auth).json()["items"][
+        0
+    ]
 
     assert card["ai_low_confidence"] is True
     assert card["total"] is None

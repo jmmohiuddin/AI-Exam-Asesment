@@ -117,9 +117,7 @@ class ItemResult(Base):
     ai_model: Mapped[str | None] = mapped_column(Text, nullable=True)
     score: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
     total: Mapped[Decimal | None] = mapped_column(MARKS, nullable=True)
-    decided_by: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("app_user.id"), nullable=True
-    )
+    decided_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("app_user.id"), nullable=True)
     decided_at: Mapped[datetime | None] = mapped_column(nullable=True)
     locked_at: Mapped[datetime | None] = mapped_column(nullable=True)
     created_at: Mapped[datetime] = created_at_column()

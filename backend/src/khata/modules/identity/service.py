@@ -84,7 +84,9 @@ def _account_is_locked(user: AppUser, now: datetime) -> bool:
 
 def _register_failure(session: Session, user: AppUser, settings: Settings, now: datetime) -> None:
     window_start = now - timedelta(seconds=settings.lockout_window_seconds)
-    within_window = user.last_failed_login_at is not None and user.last_failed_login_at >= window_start
+    within_window = (
+        user.last_failed_login_at is not None and user.last_failed_login_at >= window_start
+    )
     user.failed_login_count = user.failed_login_count + 1 if within_window else 1
     user.last_failed_login_at = now
     if user.failed_login_count >= settings.lockout_threshold:

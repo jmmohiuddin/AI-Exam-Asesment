@@ -39,7 +39,7 @@ def utcnow() -> datetime:
 
 class Base(DeclarativeBase):
     metadata = MetaData(naming_convention=NAMING_CONVENTION)
-    type_annotation_map = {
+    type_annotation_map = {  # noqa: RUF012 - SQLAlchemy's declarative API expects a plain dict
         uuid.UUID: UUID(as_uuid=True),
         datetime: DateTime(timezone=True),
         dict[str, Any]: JSONB,

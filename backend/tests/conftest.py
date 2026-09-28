@@ -80,7 +80,7 @@ def migrated_database(test_settings: Settings) -> Iterator[Database]:
         "KHATA_DATABASE_URL_APP": test_settings.database_url_app,
         "KHATA_DATABASE_URL_OWNER": test_settings.database_url_owner or "",
     }
-    completed = subprocess.run(  # noqa: S603 - fixed argv, no shell
+    completed = subprocess.run(
         [sys.executable, "-m", "alembic", "upgrade", "head"],
         cwd=BACKEND_DIR,
         env=environment,

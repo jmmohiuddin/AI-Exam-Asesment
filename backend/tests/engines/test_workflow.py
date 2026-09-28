@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from itertools import pairwise
 from typing import Any
 
 import pytest
@@ -188,7 +189,7 @@ def test_self_transitions_are_illegal() -> None:
 
 def test_allowed_targets_and_teacher_decided() -> None:
     assert allowed_targets(I.PENDING) == frozenset({I.UNMAPPED, I.PROCESSING, I.MANUAL_READY})
-    assert TEACHER_DECIDED == frozenset({I.CONFIRMED, I.EDITED})
+    assert TEACHER_DECIDED == frozenset({I.CONFIRMED, I.EDITED})  # noqa: SIM300
     assert allowed_targets(E.PUBLISHED) == frozenset({E.RECHECK})
 
 
@@ -204,10 +205,10 @@ def test_random_item_walks_only_take_legal_edges(choices: list[int]) -> None:
         nxt = targets[pick % len(targets)]
         state = transition(state, nxt, **PERMISSIVE_CTX)
         history.append(state)
-    for before, after in zip(history, history[1:], strict=False):
+    for before, after in pairwise(history):
         assert (before, after) in EXPECTED_ITEM_EDGES
     # Locked is only ever entered from a decided (or re-check) state.
-    for before, after in zip(history, history[1:], strict=False):
+    for before, after in pairwise(history):
         if after is I.LOCKED:
             assert before in {I.CONFIRMED, I.EDITED, I.MODERATED, I.RECHECK}
 

@@ -171,9 +171,7 @@ def test_alternative_method_sum_mismatch_is_error() -> None:
                 "id": "alt1",
                 "kind": "method",
                 "text": "uses s = ut + 1/2 at^2 then v^2 = u^2 + 2as",
-                "criteria": [
-                    {"id": "m1", "text_en": "writes formula", "marks": 1, "type": "step"}
-                ],
+                "criteria": [{"id": "m1", "text_en": "writes formula", "marks": 1, "type": "step"}],
             }
         ]
     )

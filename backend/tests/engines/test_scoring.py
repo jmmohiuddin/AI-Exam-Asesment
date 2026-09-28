@@ -140,8 +140,10 @@ def test_ecf_flag_on_first_step_or_non_step_gives_no_credit() -> None:
     assert score.total == D(3)
     assert score.criteria[0].ecf_credit is False
     partial = rubric(ecf_policy={"enabled": True, "steps": ["s1", "s2"]})
-    score2 = score_item(partial, [dec("s1", "not_met"), dec("s2", "met"), dec("s3", "met"),
-                                  dec("fa", "not_met", ecf=True)])
+    score2 = score_item(
+        partial,
+        [dec("s1", "not_met"), dec("s2", "met"), dec("s3", "met"), dec("fa", "not_met", ecf=True)],
+    )
     assert score2.total == D(2)
 
 
@@ -172,7 +174,9 @@ def test_deductions_apply_and_floor_at_zero() -> None:
 
 
 def test_max_total_deduction_limits_deductions() -> None:
-    score = score_item(rubric(max_total_deduction=1), ALL_MET, deductions_applied=["no_unit", "sign"])
+    score = score_item(
+        rubric(max_total_deduction=1), ALL_MET, deductions_applied=["no_unit", "sign"]
+    )
     assert score.deductions_total == D(1)
     assert score.total == D(3)
 
@@ -195,8 +199,12 @@ def test_caps_trigger_on_unmet_criteria() -> None:
 
 def test_cap_not_triggered_when_ecf_credits_the_criterion() -> None:
     capped = rubric(caps=[{"id": "fa_wrong", "max_marks": 1, "when_not_met": ["fa"]}])
-    decisions = [dec("s1", "not_met"), dec("s2", "met"), dec("s3", "met"),
-                 dec("fa", "not_met", ecf=True)]
+    decisions = [
+        dec("s1", "not_met"),
+        dec("s2", "met"),
+        dec("s3", "met"),
+        dec("fa", "not_met", ecf=True),
+    ]
     score = score_item(capped, decisions)
     assert score.caps_applied == ()
     assert score.total == D(3)
@@ -254,7 +262,7 @@ def test_explicit_item_max_bounds_total() -> None:
 
 
 def test_decision_order_does_not_matter() -> None:
-    forward = score_item(rubric(), ALL_MET[:2] + [dec("s3", "partly", "0.5"), ALL_MET[3]])
+    forward = score_item(rubric(), [*ALL_MET[:2], dec("s3", "partly", "0.5"), ALL_MET[3]])
     backward = score_item(rubric(), [ALL_MET[3], dec("s3", "partly", "0.5"), *ALL_MET[:2][::-1]])
     assert forward == backward
 
@@ -291,8 +299,11 @@ rubric_st = st.builds(
 
 
 @settings(max_examples=400)
-@given(rubric_st, st.lists(decision_st, min_size=4, max_size=4),
-       st.lists(st.sampled_from(["no_unit", "sign"]), unique=True))
+@given(
+    rubric_st,
+    st.lists(decision_st, min_size=4, max_size=4),
+    st.lists(st.sampled_from(["no_unit", "sign"]), unique=True),
+)
 def test_property_bounds_and_determinism(
     rb: Rubric, raw: list[tuple[str, str, bool]], deductions: list[str]
 ) -> None:

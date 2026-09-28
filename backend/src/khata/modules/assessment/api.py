@@ -82,9 +82,7 @@ def read_exam(exam_id: uuid.UUID, principal: MarkerDep, session: TenantSession) 
     return ExamOut.model_validate(service.get_exam(session, exam_id), from_attributes=True)
 
 
-@router.post(
-    "/exams/{exam_id}/items", response_model=ItemOut, status_code=status.HTTP_201_CREATED
-)
+@router.post("/exams/{exam_id}/items", response_model=ItemOut, status_code=status.HTTP_201_CREATED)
 def add_item(
     exam_id: uuid.UUID, payload: ItemCreate, principal: AuthorDep, session: TenantSession
 ) -> ItemOut:
@@ -231,18 +229,14 @@ def _review_card(session: Session, result: ItemResult) -> ReviewCard:
 
 
 @router.get("/scripts/{script_id}/review", response_model=ReviewQueue)
-def review_queue(
-    script_id: uuid.UUID, principal: MarkerDep, session: TenantSession
-) -> ReviewQueue:
+def review_queue(script_id: uuid.UUID, principal: MarkerDep, session: TenantSession) -> ReviewQueue:
     """Everything needed to mark one script, in one request."""
     script = _get_script(session, script_id)
     exam = service.get_exam(session, script.exam_id)
     candidate = session.get(ExamCandidate, script.candidate_id)
     if candidate is None:  # pragma: no cover - guaranteed by the foreign key
         raise DomainError("NOT_FOUND", detail="Candidate not found.")
-    results = session.scalars(
-        select(ItemResult).where(ItemResult.script_id == script.id)
-    ).all()
+    results = session.scalars(select(ItemResult).where(ItemResult.script_id == script.id)).all()
     cards = sorted(
         (_review_card(session, result) for result in results), key=lambda card: card.item_no
     )

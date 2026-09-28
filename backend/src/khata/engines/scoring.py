@@ -106,7 +106,8 @@ def score_item(
     raw = criteria_total - deductions_total
     for cap_max in (cap.max_marks for cap in rubric.caps if cap.id in caps):
         raw = min(raw, cap_max)
-    computed = _bounded(round_exact(_bounded(raw, bound), rubric.mark_quantum, rubric.rounding_mode), bound)
+    rounded = round_exact(_bounded(raw, bound), rubric.mark_quantum, rubric.rounding_mode)
+    computed = _bounded(rounded, bound)
     if total_override is not None:
         _check_override(total_override, bound, rubric.mark_quantum)
     return ItemScore(

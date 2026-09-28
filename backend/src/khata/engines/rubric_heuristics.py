@@ -105,9 +105,7 @@ def _words(text: str) -> list[str]:
 
 def has_vague_term(text: str) -> bool:
     words = set(_words(text))
-    return any(term in words for term in VAGUE_EN) or any(
-        term in words for term in VAGUE_BN
-    )
+    return any(term in words for term in VAGUE_EN) or any(term in words for term in VAGUE_BN)
 
 
 def names_observable_object(text: str) -> bool:

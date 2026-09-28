@@ -61,7 +61,7 @@ class UserOut(BaseModel):
 
 class LoginResponse(BaseModel):
     access_token: str
-    token_type: Literal["Bearer"] = "Bearer"
+    token_type: Literal["Bearer"] = "Bearer"  # noqa: S105 - the OAuth scheme name
     expires_in: int
     active_tenant_id: uuid.UUID | None
     user: UserOut

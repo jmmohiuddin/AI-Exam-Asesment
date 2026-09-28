@@ -20,8 +20,8 @@ from pwdlib.hashers.argon2 import Argon2Hasher
 JWT_ALGORITHM = "HS256"
 JWT_ISSUER = "khata"
 JWT_AUDIENCE = "khata-api"
-ACCESS_TOKEN_TYPE = "access"
-STEP_UP_TOKEN_TYPE = "step_up"
+ACCESS_TOKEN_TYPE = "access"  # noqa: S105 - a JWT `typ` claim, not a credential
+STEP_UP_TOKEN_TYPE = "step_up"  # noqa: S105 - a JWT `typ` claim, not a credential
 REFRESH_TOKEN_BYTES = 32
 OTP_DIGITS = 6
 CLOCK_SKEW_SECONDS = 10

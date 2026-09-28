@@ -125,7 +125,10 @@ def ensure_tenant_key(session: Session, kms: Kms, tenant_id: uuid.UUID) -> Tenan
     dek = AESGCM.generate_key(bit_length=DEK_BYTES * 8)
     wrapped = kms.wrap(dek, context=_dek_context(tenant_id, 1))
     row = TenantKey(
-        tenant_id=tenant_id, key_version=1, wrapped_dek=wrapped.ciphertext, kms_key_id=wrapped.key_id
+        tenant_id=tenant_id,
+        key_version=1,
+        wrapped_dek=wrapped.ciphertext,
+        kms_key_id=wrapped.key_id,
     )
     session.add(row)
     session.flush()

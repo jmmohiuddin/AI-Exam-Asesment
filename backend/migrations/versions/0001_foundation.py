@@ -16,7 +16,9 @@ down_revision = None
 branch_labels = None
 depends_on = None
 
-PROCRASTINATE_SCHEMA = Path(__file__).resolve().parents[1] / "sql" / "procrastinate_3.10.0_schema.sql"
+PROCRASTINATE_SCHEMA = (
+    Path(__file__).resolve().parents[1] / "sql" / "procrastinate_3.10.0_schema.sql"
+)
 
 CONTEXT_FUNCTIONS = r"""
 REVOKE ALL ON SCHEMA public FROM PUBLIC;
