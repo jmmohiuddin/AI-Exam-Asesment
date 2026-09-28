@@ -1,13 +1,13 @@
 /** Auth contract types (backend /v1/auth/*, /v1/me). */
 
 export type Role =
-  | 'org_owner'
-  | 'school_admin'
-  | 'exam_coordinator'
-  | 'hod'
-  | 'teacher'
-  | 'capture_operator'
-  | 'principal';
+  | "org_owner"
+  | "school_admin"
+  | "exam_coordinator"
+  | "hod"
+  | "teacher"
+  | "capture_operator"
+  | "principal";
 
 export interface AuthUser {
   id: string;
@@ -22,13 +22,13 @@ export interface LoginRequest {
 }
 
 export interface LoginOtpRequired {
-  status: 'otp_required';
+  status: "otp_required";
   challenge_id: string;
   otp_expires_at: string;
 }
 
 export interface LoginOk {
-  status: 'ok';
+  status: "ok";
   access_token: string;
   expires_in: number;
   user: AuthUser;
@@ -43,7 +43,7 @@ export interface OtpVerifyRequest {
 }
 
 export interface OtpVerifyResponse {
-  status: 'ok';
+  status: "ok";
   access_token: string;
   expires_in: number;
   device_id: string;
@@ -64,7 +64,7 @@ export interface Membership {
   roles: Role[];
 }
 
-export type Density = 'comfortable' | 'compact';
+export type Density = "comfortable" | "compact";
 
 export interface ServerPreferences {
   locale?: string;

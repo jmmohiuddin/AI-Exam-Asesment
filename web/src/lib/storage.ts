@@ -27,7 +27,10 @@ export function removeStorage(key: string): void {
   }
 }
 
-export function readJson<T>(key: string, guard: (value: unknown) => value is T): T | null {
+export function readJson<T>(
+  key: string,
+  guard: (value: unknown) => value is T,
+): T | null {
   const raw = readStorage(key);
   if (raw === null) return null;
   try {

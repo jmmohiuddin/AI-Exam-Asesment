@@ -1,0 +1,12 @@
+# Build output and generated bundles are not ours to format.
+dist
+dev-dist
+coverage
+playwright-report
+test-results
+node_modules
+pnpm-lock.yaml
+
+# Local agent/tool state, not project source.
+.claude-flow
+.swarm

@@ -17,7 +17,13 @@
     "verbatimModuleSyntax": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "types": ["vite/client", "vite-plugin-pwa/client", "@testing-library/jest-dom/vitest", "vitest/globals"]
+    "types": [
+      "node",
+      "vite/client",
+      "vite-plugin-pwa/client",
+      "@testing-library/jest-dom/vitest",
+      "vitest/globals"
+    ]
   },
   "include": ["src"]
 }

@@ -9,11 +9,15 @@ export function parseHex(hex: string): [number, number, number] {
   const full =
     raw.length === 3
       ? raw
-          .split('')
+          .split("")
           .map((c) => c + c)
-          .join('')
+          .join("")
       : raw;
-  return [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16)) as [number, number, number];
+  return [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16)) as [
+    number,
+    number,
+    number,
+  ];
 }
 
 function channel(value: number): number {

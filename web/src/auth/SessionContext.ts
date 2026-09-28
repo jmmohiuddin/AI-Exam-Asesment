@@ -1,8 +1,9 @@
-import { createContext, useContext } from 'react';
-import type { ApiError } from '../api/problem';
-import type { Me, Membership, Role } from './types';
+import { createContext, useContext } from "react";
+import type { ApiError } from "../api/problem";
+import type { Me, Membership, Role } from "./types";
 
-export type SessionStatus = 'loading' | 'authenticated' | 'unauthenticated' | 'error';
+export type SessionStatus =
+  "loading" | "authenticated" | "unauthenticated" | "error";
 
 export interface SessionValue {
   status: SessionStatus;
@@ -24,11 +25,16 @@ export const SessionContext = createContext<SessionValue | null>(null);
 
 export function useSession(): SessionValue {
   const value = useContext(SessionContext);
-  if (!value) throw new Error('useSession must be used inside <SessionProvider>');
+  if (!value)
+    throw new Error("useSession must be used inside <SessionProvider>");
   return value;
 }
 
 export function activeMembershipOf(me: Me | null): Membership | null {
   if (!me || me.memberships.length === 0) return null;
-  return me.memberships.find((m) => m.tenant_id === me.active_tenant_id) ?? me.memberships[0] ?? null;
+  return (
+    me.memberships.find((m) => m.tenant_id === me.active_tenant_id) ??
+    me.memberships[0] ??
+    null
+  );
 }

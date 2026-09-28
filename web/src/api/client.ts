@@ -1,14 +1,25 @@
-import { newCorrelationId } from './ids';
-import { ApiError, errorFromResponse, networkError, SESSION_EXPIRED } from './problem';
-import { clearAccessToken, getAccessToken, setAccessToken } from './tokenStore';
+import { newCorrelationId } from "./ids";
+import {
+  ApiError,
+  errorFromResponse,
+  networkError,
+  SESSION_EXPIRED,
+} from "./problem";
+import { clearAccessToken, getAccessToken, setAccessToken } from "./tokenStore";
 
-export const API_BASE = '/v1';
-export const REFRESH_PATH = '/auth/refresh';
+export const API_BASE = "/v1";
+export const REFRESH_PATH = "/auth/refresh";
 
 /** Paths where a 401 means "wrong credentials", not "token expired". */
-const NO_REFRESH_PATHS = ['/auth/login', '/auth/otp/verify', '/auth/otp/resend', REFRESH_PATH, '/auth/logout'];
+const NO_REFRESH_PATHS = [
+  "/auth/login",
+  "/auth/otp/verify",
+  "/auth/otp/resend",
+  REFRESH_PATH,
+  "/auth/logout",
+];
 
-export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 export interface RequestOptions {
   method?: HttpMethod;
@@ -36,33 +47,38 @@ function notifyAuthFailure(): void {
 }
 
 function absoluteUrl(path: string): string {
-  const origin = typeof window === 'undefined' ? 'http://localhost' : window.location.origin;
+  const origin =
+    typeof window === "undefined" ? "http://localhost" : window.location.origin;
   return new URL(`${API_BASE}${path}`, origin).toString();
 }
 
 function buildHeaders(options: RequestOptions): Headers {
   const headers = new Headers(options.headers);
-  headers.set('Accept', 'application/json, application/problem+json');
-  headers.set('X-Client', 'web');
-  headers.set('X-Correlation-ID', newCorrelationId());
-  if (options.body !== undefined) headers.set('Content-Type', 'application/json');
-  if (options.idempotencyKey) headers.set('Idempotency-Key', options.idempotencyKey);
+  headers.set("Accept", "application/json, application/problem+json");
+  headers.set("X-Client", "web");
+  headers.set("X-Correlation-ID", newCorrelationId());
+  if (options.body !== undefined)
+    headers.set("Content-Type", "application/json");
+  if (options.idempotencyKey)
+    headers.set("Idempotency-Key", options.idempotencyKey);
   const token = options.anonymous ? null : getAccessToken();
-  if (token) headers.set('Authorization', `Bearer ${token}`);
+  if (token) headers.set("Authorization", `Bearer ${token}`);
   return headers;
 }
 
 async function send(path: string, options: RequestOptions): Promise<Response> {
   try {
     return await fetch(absoluteUrl(path), {
-      method: options.method ?? 'GET',
+      method: options.method ?? "GET",
       headers: buildHeaders(options),
-      body: options.body === undefined ? undefined : JSON.stringify(options.body),
-      credentials: 'include',
+      body:
+        options.body === undefined ? undefined : JSON.stringify(options.body),
+      credentials: "include",
       signal: options.signal,
     });
   } catch (cause) {
-    if (cause instanceof DOMException && cause.name === 'AbortError') throw cause;
+    if (cause instanceof DOMException && cause.name === "AbortError")
+      throw cause;
     throw networkError(cause);
   }
 }
@@ -74,7 +90,12 @@ async function parseBody<T>(response: Response): Promise<T> {
   try {
     return JSON.parse(text) as T;
   } catch (cause) {
-    throw new ApiError(response.status, { code: 'INVALID_RESPONSE' }, undefined, { cause });
+    throw new ApiError(
+      response.status,
+      { code: "INVALID_RESPONSE" },
+      undefined,
+      { cause },
+    );
   }
 }
 
@@ -86,7 +107,10 @@ interface RefreshResponse {
 let refreshInFlight: Promise<boolean> | null = null;
 
 async function doRefresh(): Promise<boolean> {
-  const response = await send(REFRESH_PATH, { method: 'POST', anonymous: true });
+  const response = await send(REFRESH_PATH, {
+    method: "POST",
+    anonymous: true,
+  });
   if (!response.ok) return false;
   const body = await parseBody<RefreshResponse>(response);
   if (!body?.access_token) return false;
@@ -111,7 +135,10 @@ export function refreshAccessToken(): Promise<boolean> {
  * if the refresh fails the session ends (listeners route to /login).
  * Errors are thrown as ApiError with the parsed problem details.
  */
-export async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<T> {
+export async function apiFetch<T>(
+  path: string,
+  options: RequestOptions = {},
+): Promise<T> {
   let response = await send(path, options);
 
   const mayRefresh = !options.anonymous && !NO_REFRESH_PATHS.includes(path);

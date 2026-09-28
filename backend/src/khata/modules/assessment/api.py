@@ -16,7 +16,7 @@ from khata.modules.aigateway.provider import (
     MarkingProvider,
 )
 from khata.modules.assessment import service
-from khata.modules.assessment.models import ExamCandidate, ExamItem, ItemResult, Script
+from khata.modules.assessment.models import Exam, ExamCandidate, ExamItem, ItemResult, Script
 from khata.modules.assessment.schemas import (
     AnswerSubmit,
     CandidateCreate,
@@ -42,6 +42,9 @@ from khata.modules.authz.deps import (
 )
 
 router = APIRouter(tags=["assessment"])
+
+#: Until cursor pagination is wired up (khata.core.pagination), cap the exam list.
+EXAM_PAGE_SIZE = 100
 
 AuthorDep = Annotated[Principal, Depends(CAN_AUTHOR_EXAM)]
 MarkerDep = Annotated[Principal, Depends(CAN_MARK)]
@@ -75,6 +78,13 @@ def create_exam(payload: ExamCreate, principal: AuthorDep, session: TenantSessio
         created_by=principal.user_id,
     )
     return ExamOut.model_validate(exam, from_attributes=True)
+
+
+@router.get("/exams", response_model=list[ExamOut])
+def list_exams(principal: MarkerDep, session: TenantSession) -> list[ExamOut]:
+    """Exams in the active tenant, newest first. RLS scopes the rows, not this query."""
+    exams = session.scalars(select(Exam).order_by(Exam.created_at.desc()).limit(EXAM_PAGE_SIZE))
+    return [ExamOut.model_validate(exam, from_attributes=True) for exam in exams]
 
 
 @router.get("/exams/{exam_id}", response_model=ExamOut)

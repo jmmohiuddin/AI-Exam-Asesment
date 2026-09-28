@@ -53,8 +53,10 @@
   --gutter-desktop: 24px;
 
   /* ---- Typography ---- */
-  --font-sans: 'Noto Sans', 'Noto Sans Bengali', 'Hind Siliguri', system-ui, sans-serif;
-  --font-bn: 'Noto Sans Bengali', 'Hind Siliguri', 'Noto Sans', system-ui, sans-serif;
+  --font-sans:
+    "Noto Sans", "Noto Sans Bengali", "Hind Siliguri", system-ui, sans-serif;
+  --font-bn:
+    "Noto Sans Bengali", "Hind Siliguri", "Noto Sans", system-ui, sans-serif;
   --weight-regular: 400;
   --weight-medium: 500;
   --weight-semibold: 600;
@@ -139,7 +141,7 @@
 
 /* Bangla line-height ≥1.6× (05 §4.2); no letter-spacing or caps on Bangla. */
 :root:lang(bn),
-[lang='bn'] {
+[lang="bn"] {
   --lh-display: 40px;
   --lh-heading: 30px;
   --lh-body: 24px;
@@ -156,14 +158,14 @@
     --lh-body: 26px;
   }
   :root:lang(bn),
-  [lang='bn'] {
+  [lang="bn"] {
     --lh-display: 36px;
     --lh-body: 26px;
   }
 }
 
 /* Compact density (desktop tables/ledgers). */
-[data-density='compact'] {
+[data-density="compact"] {
   --row-comfortable: 36px;
 }
 
@@ -171,7 +173,7 @@
  * Dim mode: dark chrome for evening marking. Student images keep natural
  * paper brightness (see .paper-image in global.css). Not a full dark theme.
  */
-[data-dim='true'] {
+[data-dim="true"] {
   --color-bg: #15181c;
   --color-surface: #1e2228;
   --color-surface-sunken: #262b32;

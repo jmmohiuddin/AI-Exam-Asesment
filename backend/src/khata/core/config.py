@@ -80,6 +80,10 @@ class Settings(BaseSettings):
     cors_origins: list[str] = []
     expose_docs: bool = True
 
+    #: Password the dev seed gives every seeded account. The seed script refuses
+    #: to run outside dev/test, so this never reaches a deployed database.
+    seed_dev_password: str = "Khata-dev-2027!"  # noqa: S105 - dev seed only; see above
+
     @property
     def is_production(self) -> bool:
         return self.env == Environment.PRODUCTION

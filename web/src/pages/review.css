@@ -1,0 +1,194 @@
+/* Review screen. Density matters here: a teacher works through many of these,
+   so the question, the answer and the model answer stay on one screen. */
+
+.review {
+  max-width: var(--content-max);
+  margin-inline: auto;
+  padding: var(--space-5) var(--gutter-phone);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+@media (min-width: 768px) {
+  .review {
+    padding-inline: var(--gutter-desktop);
+  }
+}
+
+.review__header h1 {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.review__roll {
+  font-size: var(--text-body);
+  font-weight: var(--weight-regular);
+  color: var(--color-text-muted);
+}
+
+.review__item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.review__item h2 {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  align-items: baseline;
+}
+
+.review__item h3 {
+  font-size: var(--text-dense);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  margin-block-end: var(--space-2);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+/* Bangla is never letter-spaced or capitalised (05 §4.2). */
+.review__item h3:lang(bn) {
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.review__marks {
+  font-variant-numeric: tabular-nums;
+  color: var(--color-primary-text);
+}
+
+.review__grid {
+  display: grid;
+  gap: var(--space-4);
+}
+
+@media (min-width: 900px) {
+  .review__grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.review__answer {
+  white-space: pre-wrap;
+  padding: var(--space-3);
+  background: var(--color-surface-sunken);
+  border-radius: var(--radius-control);
+}
+
+.review__ai {
+  padding: var(--space-4);
+  background: var(--color-ai-level-bg);
+  border-radius: var(--radius-card);
+}
+
+.review__ai ul {
+  margin: 0;
+  padding-inline-start: var(--space-5);
+}
+
+.review__criteria {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.review__criteria > li {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-block-end: var(--space-3);
+  border-block-end: 1px solid var(--color-border);
+}
+
+.review__choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.review__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+/* Colour is never the only signal: each chip also carries its own text label. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--target-min);
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  cursor: pointer;
+}
+
+.chip:has(input:checked) {
+  border-width: 2px;
+  font-weight: var(--weight-semibold);
+}
+
+.chip:has(input:focus-visible) {
+  outline: var(--focus-width) solid var(--color-focus);
+  outline-offset: var(--focus-offset);
+}
+
+.chip--met:has(input:checked) {
+  border-color: var(--color-criterion-met);
+  color: var(--color-criterion-met);
+}
+
+.chip--partly:has(input:checked) {
+  border-color: var(--color-criterion-partly);
+  color: var(--color-criterion-partly-text);
+}
+
+.chip--not_met:has(input:checked) {
+  border-color: var(--color-criterion-not);
+  color: var(--color-criterion-not);
+}
+
+.chip--cannot_determine:has(input:checked) {
+  border-color: var(--color-criterion-unknown);
+  color: var(--color-criterion-unknown);
+}
+
+.badge {
+  font-size: var(--text-caption);
+  font-weight: var(--weight-regular);
+  letter-spacing: normal;
+  text-transform: none;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-pill);
+}
+
+.badge--ai {
+  background: var(--color-ai-level);
+  color: #fff;
+}
+
+.badge--low {
+  background: var(--color-warning);
+  color: #fff;
+}
+
+fieldset:disabled .chip {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

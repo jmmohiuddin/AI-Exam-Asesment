@@ -10,7 +10,7 @@ export function getAccessToken(): string | null {
 }
 
 export function setAccessToken(token: string): void {
-  if (!token) throw new Error('Refusing to store an empty access token');
+  if (!token) throw new Error("Refusing to store an empty access token");
   accessToken = token;
 }
 

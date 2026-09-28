@@ -23,8 +23,8 @@ export interface ProblemDetails {
   retry_after_seconds?: number;
 }
 
-export const NETWORK_ERROR = 'NETWORK_ERROR';
-export const SESSION_EXPIRED = 'SESSION_EXPIRED';
+export const NETWORK_ERROR = "NETWORK_ERROR";
+export const SESSION_EXPIRED = "SESSION_EXPIRED";
 
 export class ApiError extends Error {
   readonly status: number;
@@ -44,8 +44,11 @@ export class ApiError extends Error {
     retryAfterHeader?: number,
     options?: { cause?: unknown },
   ) {
-    super(problem.detail ?? problem.title ?? `Request failed with status ${status}`, options);
-    this.name = 'ApiError';
+    super(
+      problem.detail ?? problem.title ?? `Request failed with status ${status}`,
+      options,
+    );
+    this.name = "ApiError";
     this.status = status;
     this.code = problem.code ?? codeForStatus(status);
     this.title = problem.title;
@@ -60,7 +63,9 @@ export class ApiError extends Error {
 
   /** The server's message in the given language, if it sent one. */
   serverMessage(language: string): string | undefined {
-    return language === 'bn' ? (this.messageBn ?? this.messageEn) : (this.messageEn ?? this.messageBn);
+    return language === "bn"
+      ? (this.messageBn ?? this.messageEn)
+      : (this.messageEn ?? this.messageBn);
   }
 }
 
@@ -71,36 +76,36 @@ export function isApiError(value: unknown): value is ApiError {
 function codeForStatus(status: number): string {
   if (status === 0) return NETWORK_ERROR;
   if (status === 401) return SESSION_EXPIRED;
-  if (status === 403) return 'FORBIDDEN';
-  if (status >= 500) return 'SERVER_ERROR';
-  return 'UNKNOWN';
+  if (status === 403) return "FORBIDDEN";
+  if (status >= 500) return "SERVER_ERROR";
+  return "UNKNOWN";
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function optionalString(value: unknown): string | undefined {
-  return typeof value === 'string' && value.length > 0 ? value : undefined;
+  return typeof value === "string" && value.length > 0 ? value : undefined;
 }
 
 function optionalNumber(value: unknown): number | undefined {
-  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+  return typeof value === "number" && Number.isFinite(value)
+    ? value
+    : undefined;
 }
 
 /** Validate untrusted JSON into ProblemDetails, dropping anything malformed. */
 export function toProblem(body: unknown): ProblemDetails {
   if (!isRecord(body)) return {};
   const errors = Array.isArray(body.errors)
-    ? body.errors.filter(isRecord).map(
-        (e): FieldError => ({
-          field: optionalString(e.field),
-          code: optionalString(e.code),
-          message_bn: optionalString(e.message_bn),
-          message_en: optionalString(e.message_en),
-          message: optionalString(e.message),
-        }),
-      )
+    ? body.errors.filter(isRecord).map((e): FieldError => ({
+        field: optionalString(e.field),
+        code: optionalString(e.code),
+        message_bn: optionalString(e.message_bn),
+        message_en: optionalString(e.message_en),
+        message: optionalString(e.message),
+      }))
     : undefined;
   return {
     type: optionalString(body.type),
@@ -121,7 +126,9 @@ function parseRetryAfter(header: string | null): number | undefined {
   const seconds = Number(header);
   if (Number.isFinite(seconds) && seconds >= 0) return seconds;
   const date = Date.parse(header);
-  return Number.isNaN(date) ? undefined : Math.max(0, Math.round((date - Date.now()) / 1000));
+  return Number.isNaN(date)
+    ? undefined
+    : Math.max(0, Math.round((date - Date.now()) / 1000));
 }
 
 export async function errorFromResponse(response: Response): Promise<ApiError> {
@@ -134,7 +141,7 @@ export async function errorFromResponse(response: Response): Promise<ApiError> {
   return new ApiError(
     response.status,
     toProblem(body),
-    parseRetryAfter(response.headers.get('Retry-After')),
+    parseRetryAfter(response.headers.get("Retry-After")),
   );
 }
 

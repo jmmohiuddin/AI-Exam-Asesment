@@ -1,11 +1,27 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { onAuthFailure, refreshAccessToken } from '../api/client';
-import { ApiError, isApiError } from '../api/problem';
-import { clearAccessToken, getAccessToken, setAccessToken } from '../api/tokenStore';
-import * as authApi from './authApi';
-import { SessionContext, activeMembershipOf, type SessionStatus, type SessionValue } from './SessionContext';
-import type { Me, Role } from './types';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { onAuthFailure, refreshAccessToken } from "../api/client";
+import { ApiError, isApiError } from "../api/problem";
+import {
+  clearAccessToken,
+  getAccessToken,
+  setAccessToken,
+} from "../api/tokenStore";
+import * as authApi from "./authApi";
+import {
+  SessionContext,
+  activeMembershipOf,
+  type SessionStatus,
+  type SessionValue,
+} from "./SessionContext";
+import type { Me, Role } from "./types";
 
 interface State {
   status: SessionStatus;
@@ -14,25 +30,49 @@ interface State {
   error: ApiError | null;
 }
 
-const SIGNED_OUT: State = { status: 'unauthenticated', me: null, endedByExpiry: false, error: null };
+const SIGNED_OUT: State = {
+  status: "unauthenticated",
+  me: null,
+  endedByExpiry: false,
+  error: null,
+};
 
 function toApiError(error: unknown): ApiError {
-  return isApiError(error) ? error : new ApiError(0, { code: 'UNKNOWN' }, undefined, { cause: error });
+  return isApiError(error)
+    ? error
+    : new ApiError(0, { code: "UNKNOWN" }, undefined, { cause: error });
 }
 
-export function SessionProvider({ children }: { children: ReactNode }): ReactNode {
+export function SessionProvider({
+  children,
+}: {
+  children: ReactNode;
+}): ReactNode {
   const queryClient = useQueryClient();
-  const [state, setState] = useState<State>({ ...SIGNED_OUT, status: 'loading' });
+  const [state, setState] = useState<State>({
+    ...SIGNED_OUT,
+    status: "loading",
+  });
   const booted = useRef(false);
 
   const loadMe = useCallback(async (): Promise<void> => {
     try {
       const me = await authApi.getMe();
-      setState({ status: 'authenticated', me, endedByExpiry: false, error: null });
+      setState({
+        status: "authenticated",
+        me,
+        endedByExpiry: false,
+        error: null,
+      });
     } catch (error) {
       // 401 after a failed refresh is handled by the auth-failure listener.
       if (isApiError(error) && error.status === 401) return;
-      setState({ status: 'error', me: null, endedByExpiry: false, error: toApiError(error) });
+      setState({
+        status: "error",
+        me: null,
+        endedByExpiry: false,
+        error: toApiError(error),
+      });
     }
   }, []);
 
@@ -104,7 +144,8 @@ export function SessionProvider({ children }: { children: ReactNode }): ReactNod
       ...state,
       activeMembership,
       roles,
-      hasRole: (...wanted: Role[]) => wanted.some((role) => roles.includes(role)),
+      hasRole: (...wanted: Role[]) =>
+        wanted.some((role) => roles.includes(role)),
       completeLogin,
       logout,
       switchTenant,
