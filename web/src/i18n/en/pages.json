@@ -7,7 +7,23 @@
   "results": {
     "title": "Results",
     "emptyTitle": "No results yet",
-    "emptyBody": "Results appear here after an exam is locked."
+    "emptyBody": "Results appear here after an exam is locked.",
+    "noCandidates": "No students have been added to this exam yet.",
+    "provisional": "Provisional — marking is not finished, so these totals will still change.",
+    "final": "Marks are locked. These are the final totals.",
+    "columns": {
+      "roll": "Roll",
+      "name": "Student",
+      "marks": "Marks",
+      "percent": "Percent",
+      "grade": "Grade",
+      "result": "Result"
+    },
+    "pass": "Pass",
+    "fail": "Fail",
+    "pendingItems_one": "{{shown}} question still to mark",
+    "pendingItems_other": "{{shown}} questions still to mark",
+    "passCount": "{{passed}} of {{total}} passed"
   },
   "insights": {
     "title": "Insights",

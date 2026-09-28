@@ -180,3 +180,33 @@ export function isUndecided(card: ReviewCard): boolean {
     card.state !== "locked"
   );
 }
+
+export interface CandidateResult {
+  candidate_id: string;
+  roll: string;
+  name: string;
+  script_id: string | null;
+  marks: MarkString;
+  max_marks: MarkString;
+  percent: MarkString;
+  letter: string;
+  grade_point: MarkString;
+  is_pass: boolean;
+  /** Items still to be decided. Non-zero means `marks` is incomplete. */
+  pending_items: number;
+}
+
+export interface ExamResults {
+  exam_id: string;
+  name: string;
+  subject_code: string;
+  state: ExamState;
+  max_marks: MarkString;
+  /** True until marks are locked: these totals will still change. */
+  provisional: boolean;
+  candidates: CandidateResult[];
+}
+
+export function getExamResults(examId: string): Promise<ExamResults> {
+  return apiFetch<ExamResults>(`/exams/${examId}/results`);
+}

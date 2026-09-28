@@ -8,6 +8,7 @@ import { SessionProvider } from "../auth/SessionProvider";
 import { RequireAuth } from "../auth/RequireAuth";
 import { HomePage } from "../pages/HomePage";
 import { LoginPage } from "../pages/LoginPage";
+import { ResultsPage } from "../pages/ResultsPage";
 import { ReviewPage } from "../pages/ReviewPage";
 
 const queryClient = new QueryClient({
@@ -47,6 +48,10 @@ export function App(): ReactNode {
               <Route element={<RequireAuth />}>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/review/:scriptId" element={<ReviewPage />} />
+                <Route
+                  path="/exams/:examId/results"
+                  element={<ResultsPage />}
+                />
               </Route>
             </Routes>
           </SessionProvider>

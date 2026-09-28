@@ -51,6 +51,7 @@ export function HomePage(): ReactNode {
 }
 
 function ExamRow({ exam }: { exam: Exam }): ReactNode {
+  const { t } = useTranslation(["pages"]);
   const scripts = useQuery({
     queryKey: ["scripts", exam.id],
     queryFn: () => listScripts(exam.id),
@@ -74,6 +75,8 @@ function ExamRow({ exam }: { exam: Exam }): ReactNode {
       {scripts.data?.length === 0 ? (
         <p className="hint">No scripts captured yet.</p>
       ) : null}
+
+      <Link to={`/exams/${exam.id}/results`}>{t("pages:results.title")}</Link>
 
       {scripts.data && scripts.data.length > 0 ? (
         <ul>

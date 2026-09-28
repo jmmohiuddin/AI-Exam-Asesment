@@ -1,0 +1,61 @@
+/* Results ledger (05 §4.2, §11). Numbers are right-aligned and tabular so the
+   columns line up the way a paper mark sheet does. */
+
+.ledger {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: var(--space-3);
+}
+
+.ledger th,
+.ledger td {
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+  text-align: start;
+  vertical-align: top;
+}
+
+.ledger th {
+  font-weight: 600;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.ledger__num {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.ledger__max {
+  color: var(--color-text-muted);
+}
+
+.ledger__pending {
+  display: block;
+  font-size: var(--text-caption);
+  color: var(--color-warning);
+}
+
+/* Pass and fail are carried by the words, not the colour: the colour only
+   reinforces them, so the column still reads correctly in monochrome. */
+.pill {
+  display: inline-block;
+  padding: 0.1rem var(--space-2);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-caption);
+  white-space: nowrap;
+  border: 1px solid var(--color-border);
+}
+
+.pill--fail {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+@media (max-width: 30rem) {
+  .ledger th,
+  .ledger td {
+    padding: var(--space-1) var(--space-2);
+  }
+}

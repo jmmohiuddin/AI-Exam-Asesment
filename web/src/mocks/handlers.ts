@@ -14,6 +14,12 @@ export const MOCK_PASSWORD = "correct-horse-battery";
 export const MOCK_DEVICE_ID = "11111111-1111-4111-8111-111111111111";
 export const MOCK_CHALLENGE_ID = "22222222-2222-4222-8222-222222222222";
 export const MOCK_OTP_CODE = "123456";
+
+/** Flipped by tests that need the locked-marks view. */
+export let examResultsProvisional = true;
+export function setExamResultsProvisional(value: boolean): void {
+  examResultsProvisional = value;
+}
 export const MOCK_USER = {
   id: "66666666-6666-4666-8666-666666666666",
   name: "Rahim Teacher",
@@ -108,6 +114,7 @@ let signedIn = false;
 export function resetMockState(): void {
   card = freshCard();
   signedIn = false;
+  examResultsProvisional = true;
 }
 
 function problem(status: number, code: string, messageEn: string) {
@@ -236,6 +243,47 @@ export const handlers = [
     `${BASE}/exams/:examId/scripts`,
     ({ request }) => requireAuth(request) ?? HttpResponse.json([mockScript]),
   ),
+
+  http.get(`${BASE}/exams/:examId/results`, ({ request }) => {
+    const denied = requireAuth(request);
+    if (denied) return denied;
+    return HttpResponse.json({
+      exam_id: mockExam.id,
+      name: mockExam.name,
+      subject_code: mockExam.subject_code,
+      state: mockExam.state,
+      max_marks: "5.00",
+      provisional: examResultsProvisional,
+      candidates: [
+        {
+          candidate_id: mockScript.candidate_id,
+          roll: "101",
+          name: "Karim Student",
+          script_id: mockScript.id,
+          marks: "4",
+          max_marks: "5.00",
+          percent: "80.00",
+          letter: "A+",
+          grade_point: "5.0",
+          is_pass: true,
+          pending_items: 0,
+        },
+        {
+          candidate_id: "99999999-9999-4999-8999-999999999999",
+          roll: "102",
+          name: "Fatema Akter",
+          script_id: null,
+          marks: "1",
+          max_marks: "5.00",
+          percent: "20.00",
+          letter: "F",
+          grade_point: "0.0",
+          is_pass: false,
+          pending_items: 1,
+        },
+      ],
+    });
+  }),
 
   http.get(`${BASE}/scripts/:scriptId/review`, ({ request }) => {
     const denied = requireAuth(request);
