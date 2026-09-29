@@ -31,18 +31,18 @@ not configurable:
 
 ## Status
 
-**Early. About 25% of the MVP's 85 "Must" requirements are delivered.**
+**Early. About 28% of the MVP's 85 "Must" requirements are delivered.**
 
 `docs/implementation/PRD_COVERAGE_AUDIT.md` is a requirement-by-requirement audit
 against the PRD, re-measured against the running code rather than against notes.
 
 | | |
 |---|---|
-| FRs delivered in full | 15 of 106 |
+| FRs delivered in full | 17 of 106 |
 | Partial | 15 |
-| Not started | 76 |
-| Endpoints | 21 of the ~100 in the system design |
-| Tests | 1,356 backend · 47 web |
+| Not started | 74 |
+| Endpoints | 29 of the ~100 in the system design |
+| Tests | 1,439 backend (85% coverage) · 79 web |
 
 ### What works end to end today
 
@@ -50,26 +50,41 @@ Verified in a browser against a real PostgreSQL database, not only in tests:
 
 1. **Sign in** — password, then an SMS-style OTP on a device the account has not used
    before. A known device skips the code.
-2. **Author** — create an exam, add questions, write rubrics (criteria, model answer,
+2. **Roster and consent** — import students from a CSV (English or Bangla headers,
+   Bangla numerals, group and version synonyms). The file is validated first and the
+   report says exactly what a commit would do; nothing is written until it is
+   confirmed. Guardian consent is recorded per student for each of CT-1 (digital
+   marking), CT-2 (AI assistance) and CT-3 (contribution to evaluation), as history
+   rather than a flag, so what was permitted when a script was marked stays
+   answerable after a withdrawal.
+3. **Author** — create an exam, add questions, write rubrics (criteria, model answer,
    alternatives, deductions, error-carried-forward, numeric answer specs), lock them.
-3. **Capture** — submit an answer as text. *(Real capture — photos, OCR, QR cover
+4. **Capture** — submit an answer as text. *(Real capture — photos, OCR, QR cover
    sheets — is not built.)*
-4. **Evaluate** — a vendor-neutral marking provider proposes criterion decisions with
+5. **Evaluate** — a vendor-neutral marking provider proposes criterion decisions with
    evidence and confidence. Only a deterministic Fake provider exists; it is refused
-   outside dev and test.
-5. **Review** — one screen shows the answer, the model answer, the rubric, the AI's
+   outside dev and test. **A student whose guardian has not given CT-2 is never sent
+   to a provider at all** — the answer goes straight to the teacher to mark by hand.
+6. **Review** — one screen shows the answer, the model answer, the rubric, the AI's
    reasoning, its evidence and its confidence. The teacher confirms or overrides per
    criterion; the mark recomputes and records who decided it.
-6. **Lock and read results** — a board-style ledger: marks, percentage, NCTB grade,
+7. **Lock and read results** — a board-style ledger: marks, percentage, NCTB grade,
    grade point, pass/fail per student, in Bangla or English. Provisional totals are
    labelled as such and say how many answers are still unmarked.
 
 ### Not built yet
 
-Capture (Android app, image pipeline, OCR, QR cover sheets), the roster and consent
-model, curriculum packs and paper templates, the background worker, moderation,
-publishing, re-checks, exports, dashboards, and the AI capability registry that gates
-which cells may use AI at all. `infra/` is empty: no Dockerfile, compose or CI.
+Capture (Android app, image pipeline, OCR, QR cover sheets), curriculum packs and
+paper templates, the background worker, moderation, publishing, re-checks, exports,
+dashboards, and the AI capability registry that gates which cells may use AI at all.
+`infra/` is empty: no Dockerfile, compose or CI.
+
+One thing is deliberately incomplete rather than simply absent: **Bijoy/ANSI to
+Unicode conversion on roster import** (FR-ORG-03, TR-BN-01). The maintained
+converters are GPL-3.0 or unlicensed, and a mapping table written from memory would
+silently corrupt student names. Until a verified table is sourced under a usable
+licence, a name that looks like legacy Bijoy text is flagged as an error and the file
+is not committed — never converted into a guess.
 
 ---
 
