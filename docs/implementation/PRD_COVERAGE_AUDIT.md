@@ -146,3 +146,64 @@ worker (4), no capability registry (5). The results engine (2) is done.
 **Next, unchanged in order:** `roster` (students, enrolment, consent CT-1..3,
 Excel/Bijoy import) — it is what results, slips, re-checks and privacy requests
 all hang off; then `curriculum`; then the worker and capture.
+
+## 9. Delivered since §8 — the roster
+
+Re-measured at commit `2189799` and the web commit that follows it.
+
+| FR | Was | Now | Evidence |
+|---|---|---|---|
+| FR-ORG-02 students belong to one section per year | 🟡 | ✅ | `enrolment` carries `academic_year_id` so a unique constraint, not application code, enforces it; a re-import that moves a student updates the enrolment rather than adding one |
+| FR-ORG-03 roster import | ⬜ | 🟡 | `engines/roster` + staged import + commit; CSV in the web app, both languages, Bangla digits and group/version synonyms. **Bijoy conversion is not done** — see below |
+| FR-ORG-06 guardian consent | ⬜ | ✅ | `student_consent` as append-only history; CT-1/2/3 per student; CT-2 decides whether a script reaches an AI provider, proven end to end in `tests/integration/test_consent_gates_ai.py` |
+| FR-ORG-01 school structure (API half) | 🟡 | 🟡 | `GET /v1/schools/{id}/academic-years` added; school and section creation still have no endpoint of their own (sections are created by the import) |
+
+**Counts:** 17 of 106 FRs delivered in full (was 15), 15 partial, 74 not started.
+Must-priority MVP coverage moves from ≈25% to **≈28%**.
+
+**Endpoints:** 29 (was 21). **Tests:** backend 1,439 (was 1,356) at 85% coverage;
+web 79 (was 39).
+
+### What the consent gate actually does
+
+A candidate linked to a student with no live CT-2 record goes straight to
+`manual_ready` — it never enters `processing`, because routing it there would
+record in the audit that the answer was sent somewhere it was not. Absence of a
+record is a refusal, not a default yes (08 §6.1).
+
+A candidate with **no** student link keeps the pre-roster behaviour. Consent
+attaches to students, and an unlinked candidate has no guardian record to read.
+That gap closes at capture, where FR-ORG-06 puts the hard stop ("the capture app
+refuses to link a cover to a student without CT-1"), and capture is not built.
+Until it is, a school that skips the roster is outside the consent regime rather
+than exempted from it. **This is the one place where the current behaviour is
+weaker than the PRD intends, and it is deliberate and temporary.**
+
+### Bijoy conversion is outstanding (TR-BN-01)
+
+FR-ORG-03 requires Bijoy/ANSI to Unicode conversion on import. It is not done.
+The maintained converters are GPL-3.0 or carry no licence at all, and a mapping
+table written from memory would silently corrupt student names — the failure
+mode the requirement exists to prevent.
+
+Current behaviour: a name field that looks like legacy Bijoy text is **flagged as
+an error and the file is not committed**. That satisfies TR-BN-01's "ambiguous
+cases flagged" and never puts mojibake on a report card, but it does not satisfy
+FR-ORG-03's acceptance criterion ("a 500-row file with 20 Bijoy-encoded names
+imports with correct Unicode"). A verified mapping table has to be sourced under
+a licence this product can use before that criterion can pass.
+
+### Two defects found by building this, not by review
+
+- A bare roll cannot identify a student. Rolls restart in every section, so the
+  generated student id had to become `class-section-roll`; a bare "101" would
+  have merged 9-A-101 and 9-B-101 into one person.
+- `pnpm dev:mock` never started MSW — nothing imported `src/mocks/browser.ts`, so
+  the mock mode silently proxied to a backend that was not running. Now wired.
+
+**The blocker list in §5 now reads:** no capture (3), no worker (4), no
+capability registry (5). The student entity (1) and the results engine (2) are
+both done.
+
+**Next, in order:** `curriculum` (packs, paper templates, choice rules), then
+exam sub-parts and MCQ keys on top; then the worker and capture.

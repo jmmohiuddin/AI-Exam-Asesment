@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import sys
 import uuid
+from datetime import date
 from decimal import Decimal
 
 from sqlalchemy import select
@@ -20,13 +21,16 @@ from sqlalchemy import select
 from khata.core.config import Environment, Settings, get_settings
 from khata.core.db import Database
 from khata.core.roles import Role
+from khata.engines.roster import RawRow
 from khata.engines.rubric import Rubric
 from khata.modules.aigateway.fake import FakeMarkingProvider
 from khata.modules.assessment import service
 from khata.modules.assessment.models import Script
 from khata.modules.identity.models import AppUser
 from khata.modules.identity.service import create_user
-from khata.modules.org.models import Organization, RoleAssignment, School
+from khata.modules.org.models import AcademicYear, Organization, RoleAssignment, School
+from khata.modules.roster import service as roster_service
+from khata.modules.roster.models import Student
 
 TEACHER_MOBILE = "+8801712345678"
 ORG_NAME = "Shaheed Suhrawardy Model School"
@@ -86,6 +90,15 @@ ANSWERS = (
 )
 
 
+#: The same two students as ANSWERS, so the roster and the exam describe one school.
+#: Karim has consented to AI; Fatema has not, which is what makes the L0 path
+#: visible in dev without editing any data by hand.
+ROSTER = (
+    ("101", "করিম উদ্দিন", "Karim Uddin", True),
+    ("102", "ফাতেমা আক্তার", "Fatema Akter", False),
+)
+
+
 def seed(database: Database, settings: Settings) -> dict[str, str]:
     password = settings.seed_dev_password
     tenant_id = uuid.uuid4()
@@ -115,6 +128,63 @@ def seed(database: Database, settings: Settings) -> dict[str, str]:
         )
         session.flush()
 
+        academic_year = AcademicYear(
+            tenant_id=tenant_id,
+            school_id=school.id,
+            year=2026,
+            starts_on=date(2026, 1, 1),
+            ends_on=date(2026, 12, 31),
+            is_current=True,
+        )
+        session.add(academic_year)
+        session.flush()
+
+        staged = roster_service.validate_import(
+            session,
+            tenant_id=tenant_id,
+            school=school,
+            academic_year=academic_year,
+            filename="class-9-science.csv",
+            rows=[
+                RawRow(
+                    row_number=index,
+                    roll=roll,
+                    name_bn=name_bn,
+                    name_en=name_en,
+                    class_level="9",
+                    group_code="science",
+                    version="BM",
+                    shift="day",
+                    section="A",
+                )
+                for index, (roll, name_bn, name_en, _) in enumerate(ROSTER, start=1)
+            ],
+            created_by=teacher.id,
+        )
+        roster_service.commit_import(session, staged=staged, actor_id=teacher.id)
+
+        students = {
+            student.student_uid: student
+            for student in session.scalars(select(Student).where(Student.school_id == school.id))
+        }
+        for roll, _, _, ai_consented in ROSTER:
+            student = students[f"9-A-{roll}"]
+            for consent_type, granted in (
+                (roster_service.CAPTURE_CONSENT, True),
+                (roster_service.AI_CONSENT, ai_consented),
+            ):
+                roster_service.record_consent(
+                    session,
+                    tenant_id=tenant_id,
+                    student=student,
+                    consent_type=consent_type,
+                    granted=granted,
+                    method="paper_form",
+                    evidence_ref=None,
+                    note=None,
+                    actor_id=teacher.id,
+                )
+
         exam = service.create_exam(
             session,
             tenant_id=tenant_id,
@@ -139,7 +209,13 @@ def seed(database: Database, settings: Settings) -> dict[str, str]:
         # reviewing, which closes capture — the same order a real exam follows.
         script_ids: list[uuid.UUID] = []
         for roll, name, answer in ANSWERS:
-            candidate = service.add_candidate(session, exam=exam, roll=roll, name=name)
+            candidate = service.add_candidate(
+                session,
+                exam=exam,
+                roll=roll,
+                name=name,
+                student_id=students[f"9-A-{roll}"].id,
+            )
             result = service.submit_answer(
                 session, exam=exam, candidate=candidate, item=item, answer_text=answer
             )

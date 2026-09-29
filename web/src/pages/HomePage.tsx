@@ -30,6 +30,10 @@ export function HomePage(): ReactNode {
         </p>
       </header>
 
+      <nav className="card stack" aria-label={t("pages:roster.title")}>
+        <Link to="/roster">{t("pages:roster.title")}</Link>
+      </nav>
+
       {query.data.length === 0 ? (
         <div className="card stack">
           <h2>{t("pages:exams.emptyTitle")}</h2>

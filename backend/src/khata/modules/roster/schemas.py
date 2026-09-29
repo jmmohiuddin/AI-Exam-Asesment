@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -16,6 +16,17 @@ MAX_IMPORT_ROWS = 5000
 
 class StrictModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
+
+
+# --------------------------------------------------------------------------- structure
+
+
+class AcademicYearOut(BaseModel):
+    id: uuid.UUID
+    year: int
+    starts_on: date
+    ends_on: date
+    is_current: bool
 
 
 # --------------------------------------------------------------------------- import

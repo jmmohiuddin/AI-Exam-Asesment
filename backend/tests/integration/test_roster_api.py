@@ -446,3 +446,57 @@ def test_the_roster_needs_an_administrative_role(
 
     assert refused.status_code == 403
     assert refused.json()["code"] == "PERMISSION_DENIED"
+
+
+def test_academic_years_are_listed_for_the_import_to_file_against(
+    client: TestClient, auth: dict[str, str], seed: dict[str, object], academic_year: uuid.UUID
+) -> None:
+    listed = client.get(f"/v1/schools/{seed['school_id']}/academic-years", headers=auth)
+
+    assert listed.status_code == 200, listed.text
+    years = listed.json()
+    assert [year["id"] for year in years] == [str(academic_year)]
+    assert years[0]["year"] == 2026
+    assert years[0]["is_current"] is True
+
+
+def test_an_import_against_another_school_s_year_is_refused(
+    client: TestClient,
+    database: Database,
+    auth: dict[str, str],
+    seed: dict[str, object],
+    academic_year: uuid.UUID,
+) -> None:
+    """Otherwise a roster lands in a school the admin did not choose."""
+    from khata.modules.org.models import AcademicYear, School
+
+    tenant_id = seed["tenant_id"]
+    assert isinstance(tenant_id, uuid.UUID)
+    with database.session_scope(tenant_id) as session:
+        other = School(
+            tenant_id=tenant_id, name_bn="দ্বিতীয়", name_en="Second School", board="dhaka"
+        )
+        session.add(other)
+        session.flush()
+        year = AcademicYear(
+            tenant_id=tenant_id,
+            school_id=other.id,
+            year=2027,
+            starts_on=date(2027, 1, 1),
+            ends_on=date(2027, 12, 31),
+        )
+        session.add(year)
+        session.flush()
+        other_year_id = year.id
+
+    refused = client.post(
+        f"/v1/schools/{seed['school_id']}/roster-imports",
+        json={
+            "academic_year_id": str(other_year_id),
+            "filename": "class-9.xlsx",
+            "rows": [spreadsheet_row(1)],
+        },
+        headers=auth,
+    )
+
+    assert refused.status_code == 400

@@ -12,6 +12,7 @@ from khata.modules.authz.deps import Principal, RequireRoles, TenantSession
 from khata.modules.roster import service
 from khata.modules.roster.models import RosterImport, StudentConsent
 from khata.modules.roster.schemas import (
+    AcademicYearOut,
     ConsentOut,
     ConsentPut,
     ConsentStateOut,
@@ -36,6 +37,21 @@ STUDENT_PAGE_SIZE = 500
 
 def _import_out(staged: RosterImport) -> RosterImportOut:
     return RosterImportOut.model_validate(staged, from_attributes=True)
+
+
+# --------------------------------------------------------------------------- structure
+
+
+@router.get("/schools/{school_id}/academic-years", response_model=list[AcademicYearOut])
+def list_academic_years(
+    school_id: uuid.UUID, principal: RosterAdminDep, session: TenantSession
+) -> list[AcademicYearOut]:
+    """The school's years, newest first. An import has to be filed against one."""
+    service.get_school(session, school_id)
+    return [
+        AcademicYearOut.model_validate(year, from_attributes=True)
+        for year in service.list_academic_years(session, school_id)
+    ]
 
 
 # --------------------------------------------------------------------------- import

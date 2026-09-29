@@ -10,6 +10,7 @@ import { HomePage } from "../pages/HomePage";
 import { LoginPage } from "../pages/LoginPage";
 import { ResultsPage } from "../pages/ResultsPage";
 import { ReviewPage } from "../pages/ReviewPage";
+import { RosterPage } from "../pages/RosterPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -52,6 +53,7 @@ export function App(): ReactNode {
                   path="/exams/:examId/results"
                   element={<ResultsPage />}
                 />
+                <Route path="/roster" element={<RosterPage />} />
               </Route>
             </Routes>
           </SessionProvider>

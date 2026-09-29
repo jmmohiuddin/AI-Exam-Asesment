@@ -7,6 +7,9 @@
 
 # Local tool state
 .claude/settings.local.json
+# Agent scratch written next to the code it was driving; not project config.
+**/.claude/proven-config.json
+**/.claude/.proven-config-version
 .claude-flow/
 .swarm/
 ruvector.db

@@ -63,6 +63,17 @@ def get_academic_year(session: Session, academic_year_id: uuid.UUID) -> Academic
     return year
 
 
+def list_academic_years(session: Session, school_id: uuid.UUID) -> list[AcademicYear]:
+    """Newest first, so a client that wants "this year" can take the first current one."""
+    return list(
+        session.scalars(
+            select(AcademicYear)
+            .where(AcademicYear.school_id == school_id)
+            .order_by(AcademicYear.year.desc())
+        )
+    )
+
+
 def get_student(session: Session, student_id: uuid.UUID) -> Student:
     student = session.get(Student, student_id)
     if student is None:

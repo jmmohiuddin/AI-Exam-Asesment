@@ -42,5 +42,46 @@
   },
   "more": {
     "title": "More"
+  },
+  "roster": {
+    "title": "Roster",
+    "subtitle": "Students on the roll, and what their guardians have consented to.",
+    "noSchool": "Choose a school before managing its roster.",
+    "emptyTitle": "No students yet",
+    "emptyBody": "Import a roster file to add students to this school.",
+    "studentCount_one": "{{shown}} student",
+    "studentCount_other": "{{shown}} students",
+    "columns": {
+      "roll": "Roll",
+      "name": "Student",
+      "consent": "Consent"
+    },
+    "consent": {
+      "CT-1": "Digital marking",
+      "CT-2": "AI assistance",
+      "CT-3": "De-identified contribution to evaluation",
+      "noAi": "Marked without AI"
+    },
+    "import": {
+      "title": "Import a roster",
+      "help": "Upload a CSV with roll, name, class, group, version, shift and section. Nothing is saved until you confirm.",
+      "choose": "Choose a roster file",
+      "noAcademicYear": "Set up an academic year for this school before importing a roster.",
+      "headerUnrecognised": "No column in this file was recognised. Check that the first row holds the column names.",
+      "unknownColumns": "These columns were ignored: {{columns}}",
+      "ready": "Ready to import {{accepted}} rows. Nothing has been saved yet.",
+      "blocked": "{{errors}} rows have problems. Fix them and upload the file again.",
+      "counts": "{{rows}} rows read · {{accepted}} ready · {{errors}} with problems",
+      "problemsCaption": "Problems found in the roster file",
+      "columns": {
+        "row": "Row",
+        "field": "Column",
+        "problem": "Problem"
+      },
+      "alsoRows": "(also row {{rows}})",
+      "commit": "Import these students",
+      "committing": "Importing…",
+      "committed": "Imported. {{created}} students added, {{updated}} updated."
+    }
   }
 }

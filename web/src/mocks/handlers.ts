@@ -26,6 +26,58 @@ export const MOCK_USER = {
   locale: "en",
 };
 
+/** Must match the school on the membership `/v1/me` returns below. */
+export const MOCK_SCHOOL_ID = "88888888-8888-4888-8888-888888888888";
+export const MOCK_ACADEMIC_YEAR_ID = "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee";
+export const MOCK_STUDENT_ID = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+
+/** Students the roster screen lists. Reset with the rest of the mock state. */
+let students = freshStudents();
+function freshStudents() {
+  return [
+    {
+      student: {
+        id: MOCK_STUDENT_ID,
+        student_uid: "9-A-101",
+        name_bn: "করিম উদ্দিন",
+        name_en: "Karim Uddin",
+        guardian_mobile: null,
+        status: "active",
+      },
+      enrolment: {
+        section_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        academic_year_id: MOCK_ACADEMIC_YEAR_ID,
+        roll: "101",
+        fourth_subject_code: null,
+      },
+    },
+  ];
+}
+
+/** Live consent per type for MOCK_STUDENT_ID. Empty means consented to nothing. */
+let consents: Record<string, boolean> = {};
+
+function consentState() {
+  return {
+    student_id: MOCK_STUDENT_ID,
+    current: Object.entries(consents).map(([consent_type, granted], index) => ({
+      id: `cccccccc-cccc-4ccc-8ccc-00000000000${index}`,
+      consent_type,
+      granted,
+      method: "paper_form",
+      evidence_ref: null,
+      note: null,
+      recorded_at: "2026-09-01T10:00:00Z",
+      superseded_at: null,
+    })),
+    capture_allowed: consents["CT-1"] === true,
+    ai_allowed: consents["CT-2"] === true,
+  };
+}
+
+/** The staged import the roster page is currently showing, if any. */
+let stagedImport: Record<string, unknown> | null = null;
+
 const BASE = "/v1";
 
 export const mockExam = {
@@ -115,6 +167,19 @@ export function resetMockState(): void {
   card = freshCard();
   signedIn = false;
   examResultsProvisional = true;
+  students = freshStudents();
+  consents = {};
+  stagedImport = null;
+}
+
+/** Start a test with a student who has already consented to some types. */
+export function setMockConsents(next: Record<string, boolean>): void {
+  consents = { ...next };
+}
+
+/** Start a test with an empty roster. */
+export function setMockStudents(next: typeof students): void {
+  students = next;
 }
 
 function problem(status: number, code: string, messageEn: string) {
@@ -311,5 +376,110 @@ export const handlers = [
       total: "5.00",
     };
     return HttpResponse.json(card);
+  }),
+
+  http.get(`${BASE}/schools/:schoolId/academic-years`, ({ request }) => {
+    const denied = requireAuth(request);
+    if (denied) return denied;
+    return HttpResponse.json([
+      {
+        id: MOCK_ACADEMIC_YEAR_ID,
+        year: 2026,
+        starts_on: "2026-01-01",
+        ends_on: "2026-12-31",
+        is_current: true,
+      },
+    ]);
+  }),
+
+  http.get(`${BASE}/schools/:schoolId/students`, ({ request }) => {
+    const denied = requireAuth(request);
+    if (denied) return denied;
+    return HttpResponse.json(students);
+  }),
+
+  http.post(`${BASE}/schools/:schoolId/roster-imports`, async ({ request }) => {
+    const denied = requireAuth(request);
+    if (denied) return denied;
+    const body = (await request.json()) as {
+      filename: string;
+      rows: { row_number: number; roll?: string }[];
+    };
+    // Mirrors the engine closely enough for the screen: a row with no roll is
+    // the error the report has to show.
+    const problems = body.rows
+      .filter((row) => !row.roll)
+      .map((row) => ({
+        row_number: row.row_number,
+        field: "roll",
+        code: "required",
+        message_en: "Roll is required.",
+        message_bn: "রোল নম্বর দিতে হবে।",
+        severity: "error" as const,
+        value: "",
+        conflicts_with: [] as number[],
+      }));
+    const accepted = body.rows.length - problems.length;
+    stagedImport = {
+      id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+      school_id: MOCK_SCHOOL_ID,
+      academic_year_id: MOCK_ACADEMIC_YEAR_ID,
+      filename: body.filename,
+      state: "validated",
+      row_count: body.rows.length,
+      accepted_count: accepted,
+      error_count: problems.length,
+      report: {
+        row_count: body.rows.length,
+        accepted_count: accepted,
+        error_count: problems.length,
+        is_committable: accepted > 0 && problems.length === 0,
+        problems,
+      },
+      students_created: 0,
+      students_updated: 0,
+      sections_created: 0,
+      created_at: "2026-09-29T10:00:00Z",
+      committed_at: null,
+    };
+    return HttpResponse.json(stagedImport, { status: 201 });
+  }),
+
+  http.post(`${BASE}/roster-imports/:importId/commit`, ({ request }) => {
+    const denied = requireAuth(request);
+    if (denied) return denied;
+    const staged = stagedImport as { accepted_count: number } | null;
+    if (!staged || staged.accepted_count === 0) {
+      return problem(
+        409,
+        "ROSTER_IMPORT_NOT_COMMITTABLE",
+        "Fix the reported rows and upload the file again.",
+      );
+    }
+    return HttpResponse.json({
+      import_id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+      students_created: staged.accepted_count,
+      students_updated: 0,
+      sections_created: 1,
+      enrolments_created: staged.accepted_count,
+      enrolments_updated: 0,
+    });
+  }),
+
+  http.get(`${BASE}/students/:studentId/consents`, ({ request }) => {
+    const denied = requireAuth(request);
+    if (denied) return denied;
+    return HttpResponse.json(consentState());
+  }),
+
+  http.put(`${BASE}/students/:studentId/consents`, async ({ request }) => {
+    const denied = requireAuth(request);
+    if (denied) return denied;
+    const body = (await request.json()) as {
+      consent_type: string;
+      granted: boolean;
+    };
+    consents = { ...consents, [body.consent_type]: body.granted };
+    return HttpResponse.json(consentState());
   }),
 ];
