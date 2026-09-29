@@ -72,12 +72,16 @@ class RubricOut(BaseModel):
 class CandidateCreate(StrictModel):
     roll: str = Field(min_length=1, max_length=32)
     name: str = Field(min_length=1, max_length=200)
+    #: Links the candidate to the roll. Without it no consent decision applies and
+    #: the script is marked at L0 (FR-ORG-06).
+    student_id: uuid.UUID | None = None
 
 
 class CandidateOut(BaseModel):
     id: uuid.UUID
     roll: str
     name: str
+    student_id: uuid.UUID | None = None
 
 
 class AnswerSubmit(StrictModel):

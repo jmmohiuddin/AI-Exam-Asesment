@@ -195,6 +195,25 @@ CATALOGUE: Mapping[str, ErrorSpec] = {
         "Add the paper's questions before asking for results.",
         "ফলাফল দেখার আগে প্রশ্নগুলো যোগ করুন।",
     ),
+    # Roster
+    "ROSTER_IMPORT_NOT_COMMITTABLE": ErrorSpec(
+        409,
+        "Import has errors",
+        "Fix the reported rows and upload the file again.",
+        "চিহ্নিত সারিগুলো ঠিক করে ফাইলটি আবার আপলোড করুন।",
+    ),
+    "ROSTER_IMPORT_ALREADY_COMMITTED": ErrorSpec(
+        409,
+        "Already imported",
+        "This import was already committed.",
+        "এই আমদানিটি আগেই সম্পন্ন হয়েছে।",
+    ),
+    "CONSENT_REQUIRED": ErrorSpec(
+        409,
+        "Consent missing",
+        "The guardian has not consented to this. Record consent first.",
+        "অভিভাবকের সম্মতি নেই। আগে সম্মতি লিপিবদ্ধ করুন।",
+    ),
 }
 
 

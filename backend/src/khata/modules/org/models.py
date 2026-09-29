@@ -57,6 +57,27 @@ class AcademicYear(Base):
     created_at: Mapped[datetime] = created_at_column()
 
 
+class Section(Base):
+    """A teaching group: class, group, version and shift, named (A, B, ...).
+
+    Identity is the whole tuple, not the name: "9 Science EV A" and "9 Humanities
+    EV A" are different sections that a school writes down as the same letter.
+    """
+
+    __tablename__ = "section"
+
+    id: Mapped[uuid.UUID] = uuid_pk()
+    tenant_id: Mapped[uuid.UUID] = mapped_column(nullable=False)
+    school_id: Mapped[uuid.UUID] = mapped_column(nullable=False)
+    academic_year_id: Mapped[uuid.UUID] = mapped_column(nullable=False)
+    class_level: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+    group_code: Mapped[str] = mapped_column(Text, nullable=False)
+    version: Mapped[str] = mapped_column(Text, nullable=False)
+    shift: Mapped[str] = mapped_column(Text, nullable=False, default="day")
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = created_at_column()
+
+
 class RoleAssignment(Base):
     """A user's role in one tenant, optionally scoped to a school and subject (08 §5.3)."""
 

@@ -72,11 +72,19 @@ class ItemRubric(Base):
 
 
 class ExamCandidate(Base):
+    """Someone sitting one exam.
+
+    ``student_id`` links back to the roll where one exists. It is what carries the
+    guardian's consent decision into marking; without it there is no decision on
+    file and the script is marked without AI.
+    """
+
     __tablename__ = "exam_candidate"
 
     id: Mapped[uuid.UUID] = uuid_pk()
     tenant_id: Mapped[uuid.UUID] = mapped_column(nullable=False)
     exam_id: Mapped[uuid.UUID] = mapped_column(nullable=False)
+    student_id: Mapped[uuid.UUID | None] = mapped_column(nullable=True)
     roll: Mapped[str] = mapped_column(Text, nullable=False)
     name: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = created_at_column()

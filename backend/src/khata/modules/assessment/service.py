@@ -38,6 +38,7 @@ from khata.modules.assessment.models import (
     ItemRubric,
     Script,
 )
+from khata.modules.roster import service as roster_service
 
 #: Item states whose mark counts as decided by a teacher.
 DECIDED_STATES = frozenset({ItemState.CONFIRMED.value, ItemState.EDITED.value})
@@ -243,8 +244,27 @@ def lock_rubrics(session: Session, exam: Exam) -> Exam:
 # --------------------------------------------------------------------------- capture
 
 
-def add_candidate(session: Session, *, exam: Exam, roll: str, name: str) -> ExamCandidate:
-    candidate = ExamCandidate(tenant_id=exam.tenant_id, exam_id=exam.id, roll=roll, name=name)
+def add_candidate(
+    session: Session,
+    *,
+    exam: Exam,
+    roll: str,
+    name: str,
+    student_id: uuid.UUID | None = None,
+) -> ExamCandidate:
+    """Put a candidate on an exam, optionally linked to a student on the roll.
+
+    The link is optional because an exam can be run before a roster exists, but it
+    is what carries consent (FR-ORG-06) into marking: an unlinked candidate has no
+    guardian decision attached and so is never sent to an AI provider.
+    """
+    candidate = ExamCandidate(
+        tenant_id=exam.tenant_id,
+        exam_id=exam.id,
+        roll=roll,
+        name=name,
+        student_id=student_id,
+    )
     session.add(candidate)
     session.flush()
     return candidate
@@ -321,19 +341,53 @@ def evaluate_script(
         exam.state = transition(ExamState.CAPTURING, ExamState.PROCESSING).value
         exam.updated_at = utcnow()
 
+    ai_allowed = ai_allowed_for(session, script)
     results = list(session.scalars(select(ItemResult).where(ItemResult.script_id == script.id)))
     for result in results:
         if result.state != ItemState.PENDING.value:
             continue
-        _evaluate_one(session, provider, exam, result)
+        _evaluate_one(session, provider, exam, result, ai_allowed=ai_allowed)
 
     _advance_to_reviewing(exam)
     return results
 
 
+def ai_allowed_for(session: Session, script: Script) -> bool:
+    """May this script be sent to an AI provider (FR-ORG-06, CT-2)?
+
+    Consent is recorded per student, so the question only has an answer for a
+    candidate linked to the roll. For a linked student the rule is 08 §6.1's: no
+    live CT-2 record means no, because absence of a decision is not a yes.
+
+    An *unlinked* candidate is not a roster student and carries no guardian record
+    at all; those keep the pre-roster behaviour. That gap closes at capture, not
+    here: FR-ORG-06 puts the hard stop on linking a script to a student without
+    CT-1, and capture is not built yet. Until it is, a school that skips the roster
+    is outside the consent regime rather than exempted from it.
+    """
+    candidate = session.get(ExamCandidate, script.candidate_id)
+    if candidate is None or candidate.student_id is None:
+        return True
+    return roster_service.has_consent(session, candidate.student_id, roster_service.AI_CONSENT)
+
+
 def _evaluate_one(
-    session: Session, provider: MarkingProvider, exam: Exam, result: ItemResult
+    session: Session,
+    provider: MarkingProvider,
+    exam: Exam,
+    result: ItemResult,
+    *,
+    ai_allowed: bool,
 ) -> None:
+    if not ai_allowed:
+        # No CT-2 on file, so nothing is processed at all — the item goes straight to
+        # the teacher at L0. Routing it through `processing` would claim in the audit
+        # that this student's answer was sent somewhere, which is the opposite of
+        # what happened.
+        result.state = transition(ItemState.PENDING, ItemState.MANUAL_READY).value
+        result.updated_at = utcnow()
+        return
+
     item = get_item(session, result.item_id)
     rubric_row = latest_rubric(session, item.id)
 

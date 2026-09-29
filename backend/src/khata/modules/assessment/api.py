@@ -150,7 +150,13 @@ def add_candidate(
     exam_id: uuid.UUID, payload: CandidateCreate, principal: AuthorDep, session: TenantSession
 ) -> CandidateOut:
     exam = service.get_exam(session, exam_id)
-    candidate = service.add_candidate(session, exam=exam, roll=payload.roll, name=payload.name)
+    candidate = service.add_candidate(
+        session,
+        exam=exam,
+        roll=payload.roll,
+        name=payload.name,
+        student_id=payload.student_id,
+    )
     return CandidateOut.model_validate(candidate, from_attributes=True)
 
 

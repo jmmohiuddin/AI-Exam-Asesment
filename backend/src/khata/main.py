@@ -25,6 +25,7 @@ from khata.modules.aigateway.provider import MarkingProvider
 from khata.modules.assessment.api import router as assessment_router
 from khata.modules.identity.api import router as identity_router
 from khata.modules.identity.delivery import build_otp_sender
+from khata.modules.roster.api import router as roster_router
 
 API_PREFIX = "/v1"
 TITLE = "Khata API"
@@ -84,6 +85,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app.include_router(identity_router, prefix=API_PREFIX)
     app.include_router(assessment_router, prefix=API_PREFIX)
+    app.include_router(roster_router, prefix=API_PREFIX)
 
     @app.get("/health", tags=["ops"], include_in_schema=False)
     def health() -> dict[str, object]:
